@@ -11,6 +11,7 @@ import tempfile
 from urllib.request import urlopen
 import zipfile
 
+import git
 from typing import Optional
 
 
@@ -201,19 +202,31 @@ def build_wheel_from_local_package(
 def generate_package_index(
         dest: pathlib.Path,
         package_dir: pathlib.Path,
-        generate_html: bool) -> bool:
+        generate_html: bool,
+        remote: Optional[git.remote.Remote]=None) -> bool:
     # https://www.python.org/dev/peps/pep-0503/
-    package_dest = dest / re.sub(r"[-_.]+", "-", package_dir.name).lower()
+    package = re.sub(r"[-_.]+", "-", package_dir.name).lower()
+    package_dest = dest / package
     package_dest.mkdir(parents=True, exist_ok=True)
-    files = []
+    files = {}
     for f in (package_dir / 'dist').glob('*'):
         print(f.name)
-        files.append(f.name)
+        files[f.name] = f.name
         shutil.copy(f, package_dest)
+    if remote is not None:
+        url = pathlib.Path(remote.url)
+        raw_url = pathlib.Path(
+            'https://github.com') / url.parent.name / url.stem / 'raw'
+        for branch in ('Darwin',):
+            if package in remote.refs[branch].commit.tree:
+                for f in remote.refs[branch].commit.tree[package].blobs:
+                    if f.name not in files:
+                        print(f.name)
+                        files[f.name] = raw_url / branch / package / f.name
     if generate_html:
         files_list = ''.join([
-            u'<a href="{0}">{0}</a>'.format(f)
-            for f in files])
+            u'<a href="{1}">{0}</a>'.format(f, url)
+            for f, url in files.items()])
         (package_dest / 'index.html').write_text(
             u'<!DOCTYPE html><html><body>{0}</body></html>'.format(
                 files_list))
@@ -223,17 +236,20 @@ def generate_package_index(
 def generate_index(
         dest: pathlib.Path,
         source: pathlib.Path,
-        generate_html: bool) -> None:
+        generate_html: bool,
+        remote: Optional[git.remote.Remote]=None) -> None:
     dest.mkdir(parents=True, exist_ok=True)
     packages = []
     for package_dir in source.glob('*'):
         if package_dir.is_dir():
-            found = generate_package_index(dest, package_dir, generate_html)
+            found = generate_package_index(
+                dest, package_dir, generate_html, remote)
             if found:
                 packages.append(package_dir.name)
     if generate_html:
         package_list = ''.join([
-            u'<a href="/{0}/">{0}</a>'.format(p)
+            u'<a href="/{1}/">{0}</a>'.format(
+                p, re.sub(r"[-_.]+", "-", p).lower())
             for p in packages])
         (dest / 'index.html').write_text(
             u'<!DOCTYPE html><html><body>{0}</body></html>'.format(
@@ -305,15 +321,30 @@ def main() -> None:
     parser.add_argument(
         '-k', '--keep', action='store_true',
         help='keep build files to /tmp/build')
+    parser.add_argument(
+        '-i', '--include', action='store_true',
+        help='find and include remote branch artifacts')
+    parser.add_argument(
+        '-s', '--skip-build', action='store_true',
+        help='skip build')
     args = parser.parse_args()
+    origin = None
+    if args.include:
+        try:
+            repo = git.Repo()
+            origin = repo.remotes.origin
+            origin.fetch()
+        except git.exc.InvalidGitRepositoryError:
+            print('Not a git directory. Ignore include flag')
     if args.keep:
         tmp = pathlib.Path(tempfile.gettempdir()) / 'build'
     else:
         tmp = pathlib.Path(tempfile.mkdtemp())
     dest = pathlib.Path(args.dest)
     try:
-        build(dest, tmp)
-        generate_index(dest, tmp, not args.no_index)
+        if not args.skip_build:
+            build(dest, tmp)
+        generate_index(dest, tmp, not args.no_index, origin)
     finally:
         if not args.keep:
             shutil.rmtree(tmp)
