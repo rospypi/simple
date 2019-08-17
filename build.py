@@ -60,7 +60,7 @@ def build_wheel(path: pathlib.Path, build_py2: bool=False) -> None:
     cwd = os.getcwd()
     try:
         os.chdir(path)
-        sys.argv = ['', 'bdist_wheel', '--universal']
+        sys.argv = ['', 'sdist', 'bdist_wheel', '--universal']
         runpy.run_path(path / 'setup.py')
         if build_py2:
             # TODO: find a better way
@@ -204,7 +204,7 @@ def generate_package_index(
     package_dest = dest / re.sub(r"[-_.]+", "-", package_dir.name).lower()
     package_dest.mkdir(parents=True, exist_ok=True)
     files = []
-    for f in (package_dir / 'dist').glob('*.whl'):
+    for f in (package_dir / 'dist').glob('*'):
         print(f.name)
         files.append(f.name)
         shutil.copy(f, package_dest)
