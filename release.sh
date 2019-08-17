@@ -1,7 +1,11 @@
 #!/bin/bash
 
 cd index || exit
-BRANCH="$(uname -s)"
+if [ -e "index/index.html" ]; then
+    BRANCH=gh-pages
+else
+    BRANCH="$(uname -s)"
+fi
 git init
 git checkout -b "$BRANCH"
 git add .
