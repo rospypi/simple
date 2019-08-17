@@ -1,0 +1,6 @@
+[submodule "tf2_py/geometry2"]
+	path = tf2_py/geometry2
+	url = https://github.com/ros/geometry2.git
+[submodule "tf2_py/roscpp_core"]
+	path = tf2_py/roscpp_core
+	url = https://github.com/ros/roscpp_core.git

@@ -1,0 +1,5 @@
+recursive-include stubs *
+recursive-include geometry2/tf2_py/src *.h
+recursive-include geometry2/tf2/include *
+recursive-include roscpp_core/cpp_common/include/ *
+recursive-include roscpp_core/rostime/include *
