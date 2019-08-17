@@ -1,7 +1,7 @@
 #!/bin/bash
 
 cd index || exit
-if [ -e "index/index.html" ]; then
+if [ -e index.html ]; then
     BRANCH=gh-pages
 else
     BRANCH="$(uname -s)"
