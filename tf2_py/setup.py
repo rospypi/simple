@@ -1,4 +1,15 @@
+import os
 from setuptools import setup, Extension
+
+include_dirs = [
+    'geometry2/tf2/include',
+    'roscpp_core/cpp_common/include',
+    'roscpp_core/rostime/include',
+    'stubs/include',
+]
+
+if 'BOOST_ROOT' in os.environ:
+    include_dirs.append(os.environ['BOOST_ROOT'] + '/include')
 
 setup(
     name='tf2_py',
@@ -17,12 +28,7 @@ setup(
             'roscpp_core/rostime/src/time.cpp',
             'roscpp_core/rostime/src/duration.cpp',
         ],
-        include_dirs=[
-            'geometry2/tf2/include',
-            'roscpp_core/cpp_common/include',
-            'roscpp_core/rostime/include',
-            'stubs/include',
-        ],
+        include_dirs=include_dirs,
         define_macros=[
             ('BOOST_SYSTEM_NO_DEPRECATED', None),
             ('BOOST_ERROR_CODE_HEADER_ONLY', None),
