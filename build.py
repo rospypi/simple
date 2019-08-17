@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import argparse
 import os
 import pathlib
 import re
@@ -199,7 +200,8 @@ def build_wheel_from_local_package(
 
 def generate_package_index(
         dest: pathlib.Path,
-        package_dir: pathlib.Path) -> bool:
+        package_dir: pathlib.Path,
+        generate_html: bool) -> bool:
     # https://www.python.org/dev/peps/pep-0503/
     package_dest = dest / re.sub(r"[-_.]+", "-", package_dir.name).lower()
     package_dest.mkdir(parents=True, exist_ok=True)
@@ -208,90 +210,113 @@ def generate_package_index(
         print(f.name)
         files.append(f.name)
         shutil.copy(f, package_dest)
-    files_list = ''.join([
-        u'<a href="{0}">{0}</a>'.format(f)
-        for f in files])
-    (package_dest / 'index.html').write_text(
-        u'<!DOCTYPE html><html><body>{0}</body></html>'.format(
-            files_list))
+    if generate_html:
+        files_list = ''.join([
+            u'<a href="{0}">{0}</a>'.format(f)
+            for f in files])
+        (package_dest / 'index.html').write_text(
+            u'<!DOCTYPE html><html><body>{0}</body></html>'.format(
+                files_list))
     return len(files) != 0
 
 
 def generate_index(
         dest: pathlib.Path,
-        source: pathlib.Path) -> None:
+        source: pathlib.Path,
+        generate_html: bool) -> None:
     dest.mkdir(parents=True, exist_ok=True)
     packages = []
     for package_dir in source.glob('*'):
         if package_dir.is_dir():
-            found = generate_package_index(dest, package_dir)
+            found = generate_package_index(dest, package_dir, generate_html)
             if found:
                 packages.append(package_dir.name)
-    package_list = ''.join([
-        u'<a href="/{0}/">{0}</a>'.format(p)
-        for p in packages])
-    (dest / 'index.html').write_text(
-        u'<!DOCTYPE html><html><body>{0}</body></html>'.format(
-            package_list))
+    if generate_html:
+        package_list = ''.join([
+            u'<a href="/{0}/">{0}</a>'.format(p)
+            for p in packages])
+        (dest / 'index.html').write_text(
+            u'<!DOCTYPE html><html><body>{0}</body></html>'.format(
+                package_list))
+
+
+def build(dest: pathlib.Path, tmp: pathlib.Path) -> None:
+    tmp.mkdir(parents=True, exist_ok=True)
+    # core rospy packages
+    build_wheel_from_local_package(tmp, pathlib.Path('rospy3'))
+    build_wheel_from_github_package(
+        tmp, 'ros-infrastructure/catkin_pkg', '0.4.13')
+    build_wheel_from_github_package(
+        tmp, 'ros-infrastructure/rospkg', '1.1.10')
+    build_wheel_from_github_package(
+        tmp, 'ros/ros', '1.14.6', pathlib.Path('core/roslib'))
+    build_wheel_from_github_package(
+        tmp, 'ros/genpy', '0.6.8')
+    build_wheel_from_github_package(
+        tmp, 'ros/genmsg', '0.5.12')
+    build_wheel_from_github_package(
+            tmp, 'ros/catkin', '0.7.18')
+    build_wheel_from_github_package(
+        tmp, 'ros/ros_comm', '1.14.3', pathlib.Path('clients/rospy'))
+    build_wheel_from_github_package(
+        tmp, 'ros/ros_comm', '1.14.3', pathlib.Path('tools/rosgraph'))
+    # core ros message packages
+    build_wheel_from_github_msg(
+        tmp, 'ros/std_msgs', '0.5.12')
+    build_wheel_from_github_msg(
+        tmp, 'ros/ros_comm', '1.14.3', pathlib.Path('clients/roscpp'))
+    build_wheel_from_github_msg(
+        tmp, 'ros/ros_comm_msgs', '1.11.2', pathlib.Path('rosgraph_msgs'))
+    # extra ros packages
+    build_wheel_from_github_package(
+        tmp, 'ros/actionlib', '1.12.0')
+    # build_wheel_from_github_package(
+    #     tmp, 'ros/geometry2', '0.6.5', pathlib.Path('tf2_ros'))
+    build_wheel_from_local_package(tmp, pathlib.Path('tf2_py'), True)
+    build_wheel_from_local_package(
+        tmp, pathlib.Path('tf2_py/geometry2/tf2_ros'))
+    # extra ros messages
+    common_msgs = [
+        'geometry_msgs',
+        'sensor_msgs',
+        'actionlib_msgs',
+        'shape_msgs',
+        'diagnostic_msgs',
+        'nav_msgs',
+        'stereo_msgs',
+        'trajectory_msgs',
+        'visualization_msgs',
+    ]
+    for msg in common_msgs:
+        build_wheel_from_github_msg(
+            tmp, 'ros/common_msgs', '1.12.7', pathlib.Path(msg))
+    build_wheel_from_github_msg(
+        tmp, 'ros/geometry2', '0.6.5', pathlib.Path('tf2_msgs'))
 
 
 def main() -> None:
-    dest = pathlib.Path('index')
-    with tempfile.TemporaryDirectory() as dname:
-        tmp = pathlib.Path(dname)
-        tmp.mkdir(parents=True, exist_ok=True)
-        # core rospy packages
-        build_wheel_from_local_package(tmp, pathlib.Path('rospy3'))
-        build_wheel_from_github_package(
-            tmp, 'ros-infrastructure/catkin_pkg', '0.4.13')
-        build_wheel_from_github_package(
-            tmp, 'ros-infrastructure/rospkg', '1.1.10')
-        build_wheel_from_github_package(
-            tmp, 'ros/ros', '1.14.6', pathlib.Path('core/roslib'))
-        build_wheel_from_github_package(
-            tmp, 'ros/genpy', '0.6.8')
-        build_wheel_from_github_package(
-            tmp, 'ros/genmsg', '0.5.12')
-        build_wheel_from_github_package(
-            tmp, 'ros/catkin', '0.7.18')
-        build_wheel_from_github_package(
-            tmp, 'ros/ros_comm', '1.14.3', pathlib.Path('clients/rospy'))
-        build_wheel_from_github_package(
-            tmp, 'ros/ros_comm', '1.14.3', pathlib.Path('tools/rosgraph'))
-        # core ros message packages
-        build_wheel_from_github_msg(
-            tmp, 'ros/std_msgs', '0.5.12')
-        build_wheel_from_github_msg(
-            tmp, 'ros/ros_comm', '1.14.3', pathlib.Path('clients/roscpp'))
-        build_wheel_from_github_msg(
-            tmp, 'ros/ros_comm_msgs', '1.11.2', pathlib.Path('rosgraph_msgs'))
-        # extra ros packages
-        build_wheel_from_github_package(
-            tmp, 'ros/actionlib', '1.12.0')
-        # build_wheel_from_github_package(
-        #     tmp, 'ros/geometry2', '0.6.5', pathlib.Path('tf2_ros'))
-        build_wheel_from_local_package(tmp, pathlib.Path('tf2_py'), True)
-        build_wheel_from_local_package(
-            tmp, pathlib.Path('tf2_py/geometry2/tf2_ros'))
-        # extra ros messages
-        common_msgs = [
-            'geometry_msgs',
-            'sensor_msgs',
-            'actionlib_msgs',
-            'shape_msgs',
-            'diagnostic_msgs',
-            'nav_msgs',
-            'stereo_msgs',
-            'trajectory_msgs',
-            'visualization_msgs',
-            ]
-        for msg in common_msgs:
-            build_wheel_from_github_msg(
-                tmp, 'ros/common_msgs', '1.12.7', pathlib.Path(msg))
-        build_wheel_from_github_msg(
-            tmp, 'ros/geometry2', '0.6.5', pathlib.Path('tf2_msgs'))
-        # generate pypi index
-        generate_index(dest, tmp)
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '-d', '--dest', default='index',
+        help='destination directory of artifacts')
+    parser.add_argument(
+        '-n', '--no-index', action='store_true',
+        help='do not generate index files')
+    parser.add_argument(
+        '-k', '--keep', action='store_true',
+        help='keep build files to /tmp/build')
+    args = parser.parse_args()
+    if args.keep:
+        tmp = pathlib.Path(tempfile.gettempdir()) / 'build'
+    else:
+        tmp = pathlib.Path(tempfile.mkdtemp())
+    dest = pathlib.Path(args.dest)
+    try:
+        build(dest, tmp)
+        generate_index(dest, tmp, not args.no_index)
+    finally:
+        if not args.keep:
+            shutil.rmtree(tmp)
 
 
 if __name__ == '__main__':
