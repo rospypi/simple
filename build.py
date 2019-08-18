@@ -20,7 +20,7 @@ def download_from_github(
         repo: str,
         ver: str) -> pathlib.Path:
     url = f'https://github.com/{repo}/archive/{ver}.zip'
-    zip_file = dest / f'{repo.split("/")[1]}_{ver}.zip'
+    zip_file = dest / f'{repo.replace("/", "_")}_{ver}.zip'
     if not zip_file.exists():
         u = urlopen(url)
         with open(zip_file, 'wb') as outs:
@@ -58,7 +58,7 @@ def unzip(
                 fname.write_bytes(data)
 
 
-def build_wheel(path: pathlib.Path, build_py2: bool=False) -> None:
+def build_package(path: pathlib.Path, build_py2: bool=False) -> None:
     cwd = os.getcwd()
     try:
         os.chdir(path)
@@ -113,7 +113,7 @@ actionlib_msgs/GoalStatus status
 ''')
 
 
-def generate_rosmsg(
+def generate_package_from_rosmsg(
         dest: pathlib.Path,
         package: str,
         version: str,
@@ -150,7 +150,7 @@ setup(name=\'{package}\', version=\'{version}\', packages=find_packages(),
       install_requires=[\'genpy\'])''')
 
 
-def build_wheel_from_github_package(
+def build_package_from_github_package(
         dest: pathlib.Path,
         repo: str,
         version: str,
@@ -162,10 +162,10 @@ def build_wheel_from_github_package(
     dest_dir = dest / package
     zipfile = download_from_github(dest, repo, version)
     unzip(zipfile, dest_dir, subdir)
-    build_wheel(dest_dir)
+    build_package(dest_dir)
 
 
-def build_wheel_from_github_msg(
+def build_package_from_github_msg(
         dest: pathlib.Path,
         repo: str,
         version: str,
@@ -182,11 +182,12 @@ def build_wheel_from_github_msg(
     unzip(zipfile, dest_dir / package / 'srv', subdir / 'srv')
     unzip(zipfile, dest_dir / package / 'action', subdir / 'action')
     generate_rosmsg_from_action(dest_dir, package)
-    generate_rosmsg(dest_dir, package, version, search_root_path=dest)
-    build_wheel(dest_dir)
+    generate_package_from_rosmsg(
+        dest_dir, package, version, search_root_path=dest)
+    build_package(dest_dir)
 
 
-def build_wheel_from_local_package(
+def build_package_from_local_package(
         dest: pathlib.Path,
         local_path: pathlib.Path,
         build_py2: bool=False) -> None:
@@ -194,7 +195,7 @@ def build_wheel_from_local_package(
     dest_dir = dest / package
     shutil.rmtree(dest_dir, ignore_errors=True)
     shutil.copytree(local_path, dest_dir)
-    build_wheel(dest_dir, build_py2)
+    build_package(dest_dir, build_py2)
 
 
 def generate_package_index(
@@ -255,37 +256,37 @@ def generate_index(
 def build(dest: pathlib.Path, tmp: pathlib.Path) -> None:
     tmp.mkdir(parents=True, exist_ok=True)
     # core rospy packages
-    build_wheel_from_local_package(tmp, pathlib.Path('rospy3'))
-    build_wheel_from_github_package(
+    build_package_from_local_package(tmp, pathlib.Path('rospy3'))
+    build_package_from_github_package(
         tmp, 'ros-infrastructure/catkin_pkg', '0.4.13')
-    build_wheel_from_github_package(
+    build_package_from_github_package(
         tmp, 'ros-infrastructure/rospkg', '1.1.10')
-    build_wheel_from_github_package(
+    build_package_from_github_package(
         tmp, 'ros/ros', '1.14.6', pathlib.Path('core/roslib'))
-    build_wheel_from_github_package(
+    build_package_from_github_package(
         tmp, 'ros/genpy', '0.6.8')
-    build_wheel_from_github_package(
+    build_package_from_github_package(
         tmp, 'ros/genmsg', '0.5.12')
-    build_wheel_from_github_package(
+    build_package_from_github_package(
             tmp, 'ros/catkin', '0.7.18')
-    build_wheel_from_github_package(
+    build_package_from_github_package(
         tmp, 'ros/ros_comm', '1.14.3', pathlib.Path('clients/rospy'))
-    build_wheel_from_github_package(
+    build_package_from_github_package(
         tmp, 'ros/ros_comm', '1.14.3', pathlib.Path('tools/rosgraph'))
     # core ros message packages
-    build_wheel_from_github_msg(
+    build_package_from_github_msg(
         tmp, 'ros/std_msgs', '0.5.12')
-    build_wheel_from_github_msg(
+    build_package_from_github_msg(
         tmp, 'ros/ros_comm', '1.14.3', pathlib.Path('clients/roscpp'))
-    build_wheel_from_github_msg(
+    build_package_from_github_msg(
         tmp, 'ros/ros_comm_msgs', '1.11.2', pathlib.Path('rosgraph_msgs'))
     # extra ros packages
-    build_wheel_from_github_package(
+    build_package_from_github_package(
         tmp, 'ros/actionlib', '1.12.0')
-    # build_wheel_from_github_package(
+    # build_package_from_github_package(
     #     tmp, 'ros/geometry2', '0.6.5', pathlib.Path('tf2_ros'))
-    build_wheel_from_local_package(tmp, pathlib.Path('tf2_py'), True)
-    build_wheel_from_local_package(
+    build_package_from_local_package(tmp, pathlib.Path('tf2_py'), True)
+    build_package_from_local_package(
         tmp, pathlib.Path('tf2_py/geometry2/tf2_ros'))
     # extra ros messages
     common_msgs = [
@@ -300,9 +301,9 @@ def build(dest: pathlib.Path, tmp: pathlib.Path) -> None:
         'visualization_msgs',
     ]
     for msg in common_msgs:
-        build_wheel_from_github_msg(
+        build_package_from_github_msg(
             tmp, 'ros/common_msgs', '1.12.7', pathlib.Path(msg))
-    build_wheel_from_github_msg(
+    build_package_from_github_msg(
         tmp, 'ros/geometry2', '0.6.5', pathlib.Path('tf2_msgs'))
 
 
