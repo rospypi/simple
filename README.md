@@ -12,7 +12,7 @@ So you can run ``rospy`` without ``catkin`` and Python2.
 virtualenv -p python3 venv
 . ./venv/bin/activate
 pip install --extra-index-url https://otamachan.github.io/rospy3/ rospy3
-pip install --extra-index-url https://otamachan.github.io/rospy3/ tf2_ros tf2_py
+pip install --extra-index-url https://otamachan.github.io/rospy3/ tf2_ros
 ```
 
 ## Sample

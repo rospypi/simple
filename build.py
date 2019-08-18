@@ -3,7 +3,6 @@ import argparse
 import os
 import pathlib
 import re
-import runpy
 import shutil
 import subprocess
 import sys
@@ -60,15 +59,39 @@ def unzip(
 
 def build_package(path: pathlib.Path, build_py2: bool=False) -> None:
     cwd = os.getcwd()
+    original_argv = sys.argv
+    setup_code = (path / 'setup.py').read_text()
+
+    # Patch catkin_pkg.python_setup.generate_distutils_setup
+    # to replace 'Requires' by 'Requires-Dist'
+    # https://www.python.org/dev/peps/pep-0314/#requires-multiple-use
+    # https://packaging.python.org/specifications/core-metadata/
+    import catkin_pkg.python_setup
+
+    def patched_generate_distutils_setup(**kwargs):
+        new_kwargs = catkin_pkg.python_setup.original_generate_distutils_setup(
+            **kwargs)
+        if 'requires' in new_kwargs:
+            new_kwargs['install_requires'] = new_kwargs['requires']
+            del new_kwargs['requires']
+        return new_kwargs
+    catkin_pkg.python_setup.original_generate_distutils_setup \
+        = catkin_pkg.python_setup.generate_distutils_setup
+    catkin_pkg.python_setup.generate_distutils_setup \
+        = patched_generate_distutils_setup
+
     try:
         os.chdir(path)
         sys.argv = ['', 'sdist', 'bdist_wheel', '--universal']
-        runpy.run_path(path / 'setup.py')
+        exec(setup_code)
         if build_py2:
             # TODO: find a better way
             subprocess.call(['python2', 'setup.py', 'bdist_wheel'])
     finally:
+        sys.argv = original_argv
         os.chdir(cwd)
+        catkin_pkg.python_setup.generate_distutils_setup \
+            = catkin_pkg.python_setup.original_generate_distutils_setup
 
 
 def generate_rosmsg_from_action(
@@ -248,7 +271,7 @@ def generate_index(
     if generate_html:
         package_list = ''.join([
             f'<a href="{re.sub(r"[-_.]+", "-", p).lower()}/">{p}</a><br>\n'
-            for p in packages])
+            for p in sorted(packages)])
         (dest / 'index.html').write_text(
             f'<!DOCTYPE html><html><body>\n{package_list}</body></html>')
 
