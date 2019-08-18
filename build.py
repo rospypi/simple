@@ -91,23 +91,23 @@ def generate_rosmsg_from_action(
         (msg_dir / (name + 'Goal.msg')).write_text(parts[0])
         (msg_dir / (name + 'Result.msg')).write_text(parts[1])
         (msg_dir / (name + 'Feedback.msg')).write_text(parts[2])
-        (msg_dir / (name + 'Action.msg')).write_text(f'''
-{name}ActionGoal action_goal
+        (msg_dir / (name + 'Action.msg')).write_text(
+            f'''{name}ActionGoal action_goal
 {name}ActionResult action_result
 {name}ActionFeedback action_feedback
 ''')
-        (msg_dir / (name + 'ActionGoal.msg')).write_text(f'''
-Header header
+        (msg_dir / (name + 'ActionGoal.msg')).write_text(
+            f'''Header header
 actionlib_msgs/GoalID goal_id
 {name}Goal goal
 ''')
-        (msg_dir / (name + 'ActionResult.msg')).write_text(f'''
-Header header
+        (msg_dir / (name + 'ActionResult.msg')).write_text(
+            f'''Header header
 actionlib_msgs/GoalStatus status
 {name}Result result
 ''')
-        (msg_dir / (name + 'ActionFeedback.msg')).write_text(f'''
-Header header
+        (msg_dir / (name + 'ActionFeedback.msg')).write_text(
+            f'''Header header
 actionlib_msgs/GoalStatus status
 {name}Feedback result
 ''')
