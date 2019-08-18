@@ -283,6 +283,8 @@ def build(dest: pathlib.Path, tmp: pathlib.Path) -> None:
     # extra ros packages
     build_package_from_github_package(
         tmp, 'ros/actionlib', '1.12.0')
+    build_package_from_github_package(
+        tmp, 'ros/geometry', '1.12.0', pathlib.Path('tf'))
     # build_package_from_github_package(
     #     tmp, 'ros/geometry2', '0.6.5', pathlib.Path('tf2_ros'))
     build_package_from_local_package(tmp, pathlib.Path('tf2_py'), True)
