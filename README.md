@@ -6,8 +6,6 @@
 It also supports ``tf2`` and experimetally Python3.
 So you can run ``rospy`` without ``catkin`` and Python2.
 
-Note: ``tf2`` is only supported in Ubuntu.
-
 ## Install
 
 ```bash
