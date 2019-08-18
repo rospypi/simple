@@ -19,8 +19,8 @@ def download_from_github(
         dest: pathlib.Path,
         repo: str,
         ver: str) -> pathlib.Path:
-    url = 'https://github.com/{0}/archive/{1}.zip'.format(repo, ver)
-    zip_file = dest / '{0}_{1}.zip'.format(repo.split('/')[1], ver)
+    url = f'https://github.com/{repo}/archive/{ver}.zip'
+    zip_file = dest / f'{repo.split("/")[1]}_{ver}.zip'
     if not zip_file.exists():
         u = urlopen(url)
         with open(zip_file, 'wb') as outs:
@@ -82,7 +82,7 @@ def generate_rosmsg_from_action(
         # parse
         parts = [[]]
         for l in action.read_text().split('\n'):
-            if l.startswith(u'---'):
+            if l.startswith('---'):
                 parts.append([])
                 continue
             parts[-1].append(l)
@@ -91,26 +91,26 @@ def generate_rosmsg_from_action(
         (msg_dir / (name + 'Goal.msg')).write_text(parts[0])
         (msg_dir / (name + 'Result.msg')).write_text(parts[1])
         (msg_dir / (name + 'Feedback.msg')).write_text(parts[2])
-        (msg_dir / (name + 'Action.msg')).write_text(u'''
-{0}ActionGoal action_goal
-{0}ActionResult action_result
-{0}ActionFeedback action_feedback
-'''.format(name))
-        (msg_dir / (name + 'ActionGoal.msg')).write_text(u'''
+        (msg_dir / (name + 'Action.msg')).write_text(f'''
+{name}ActionGoal action_goal
+{name}ActionResult action_result
+{name}ActionFeedback action_feedback
+''')
+        (msg_dir / (name + 'ActionGoal.msg')).write_text(f'''
 Header header
 actionlib_msgs/GoalID goal_id
-{0}Goal goal
-'''.format(name))
-        (msg_dir / (name + 'ActionResult.msg')).write_text(u'''
+{name}Goal goal
+''')
+        (msg_dir / (name + 'ActionResult.msg')).write_text(f'''
 Header header
 actionlib_msgs/GoalStatus status
-{0}Result result
-'''.format(name))
-        (msg_dir / (name + 'ActionFeedback.msg')).write_text(u'''
+{name}Result result
+''')
+        (msg_dir / (name + 'ActionFeedback.msg')).write_text(f'''
 Header header
 actionlib_msgs/GoalStatus status
-{0}Feedback result
-'''.format(name))
+{name}Feedback result
+''')
 
 
 def generate_rosmsg(
@@ -126,7 +126,7 @@ def generate_rosmsg(
         for msg_path in search_root_path.glob('*/*/msg'):
             search_path[msg_path.parent.name] = [msg_path]
     for gentype in ('msg', 'srv'):
-        files = (dest / package / gentype).glob('*.{0}'.format(gentype))
+        files = (dest / package / gentype).glob(f'*.{gentype}')
         if files:
             if gentype == 'msg':
                 generator = genpy.generator.MsgGenerator()
@@ -145,11 +145,9 @@ def generate_rosmsg(
         genpy.generate_initpy.write_modules(
             dest / package)
     (dest / 'setup.py').write_text(
-        u'from setuptools import find_packages, setup\n'
-        'setup(name=\'{0}\', version=\'{1}\', '
-        'packages=find_packages(), '
-        'install_requires=[\'genpy\'])\n'.
-        format(package, version))
+        f'''from setuptools import find_packages, setup
+setup(name=\'{package}\', version=\'{version}\', packages=find_packages(),
+      install_requires=[\'genpy\'])''')
 
 
 def build_wheel_from_github_package(
@@ -226,11 +224,10 @@ def generate_package_index(
                             raw_url / branch / package / f.name)
     if generate_html:
         files_list = ''.join([
-            u'<a href="{1}">{0}</a>'.format(f, url)
+            f'<a href="{url}">{f}</a><br>\n'
             for f, url in files.items()])
         (package_dest / 'index.html').write_text(
-            u'<!DOCTYPE html><html><body>{0}</body></html>'.format(
-                files_list))
+            f'<!DOCTYPE html><html><body>\n{files_list}</body></html>')
     return len(files) != 0
 
 
@@ -249,12 +246,10 @@ def generate_index(
                 packages.append(package_dir.name)
     if generate_html:
         package_list = ''.join([
-            u'<a href="{1}/">{0}</a>'.format(
-                p, re.sub(r"[-_.]+", "-", p).lower())
+            f'<a href="{re.sub(r"[-_.]+", "-", p).lower()}/">{p}</a><br>\n'
             for p in packages])
         (dest / 'index.html').write_text(
-            u'<!DOCTYPE html><html><body>{0}</body></html>'.format(
-                package_list))
+            f'<!DOCTYPE html><html><body>\n{package_list}</body></html>')
 
 
 def build(dest: pathlib.Path, tmp: pathlib.Path) -> None:
