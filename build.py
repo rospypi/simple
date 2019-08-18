@@ -249,7 +249,7 @@ def generate_index(
                 packages.append(package_dir.name)
     if generate_html:
         package_list = ''.join([
-            u'<a href="/{1}/">{0}</a>'.format(
+            u'<a href="{1}/">{0}</a>'.format(
                 p, re.sub(r"[-_.]+", "-", p).lower())
             for p in packages])
         (dest / 'index.html').write_text(
