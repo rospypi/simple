@@ -216,13 +216,14 @@ def generate_package_index(
     if remote is not None:
         url = pathlib.Path(remote.url)
         raw_url = pathlib.Path(
-            'https://github.com') / url.parent.name / url.stem / 'raw'
+            'github.com') / url.parent.name / url.stem / 'raw'
         for branch in ('Darwin',):
             if package in remote.refs[branch].commit.tree:
                 for f in remote.refs[branch].commit.tree[package].blobs:
                     if f.name not in files:
                         print(f.name)
-                        files[f.name] = raw_url / branch / package / f.name
+                        files[f.name] = 'https://' + str(
+                            raw_url / branch / package / f.name)
     if generate_html:
         files_list = ''.join([
             u'<a href="{1}">{0}</a>'.format(f, url)
