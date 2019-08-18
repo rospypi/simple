@@ -2,6 +2,7 @@ from setuptools import setup
 setup(
     name='rospy3',
     version='0.0.1',
+    description='meta package to install required packages',
     packages=['rospy3'],
     install_requires=[
         'actionlib',
