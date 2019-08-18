@@ -2,7 +2,7 @@
 
 ## What is this for?
 
-``rospy`` packages without ROS installation. This can be run in a pure virtualenv.
+``rospy`` [packages](https://otamachan.github.io/rospy3/) without ROS installation. This can be run in a pure virtualenv.
 It also supports ``tf2`` and experimetally Python3.
 So you can run ``rospy`` without ``catkin`` and Python2.
 
