@@ -16,5 +16,4 @@ COPY rospy3 /root/rospy3
 COPY tf2_py /root/tf2_py
 WORKDIR /root
 RUN python3 build.py
-WORKDIR /root/index
 CMD ["python3", "-m", "http.server"]

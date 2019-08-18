@@ -52,7 +52,7 @@ docker run --rm -p 8000:8000 localpypi
 ```bash
 virtualenv -p python3 venv
 . ./venv/bin/activate
-pip install --extra-index-url http://localhost:8000 rospy3
+pip install --extra-index-url http://localhost:8000/index/ rospy3
 ```
 
 
@@ -65,12 +65,11 @@ virtualenv -p python3 dev
 . ./dev/bin/activate
 ./install.sh
 ./build.py
-cd index
 python -m http.server
 ```
 
 ```bash
 virtualenv -p python3 venv
 . ./venv/bin/activate
-pip install --extra-index-url http://localhost:8000 rospy3
+pip install --extra-index-url http://localhost:8000/index/ rospy3
 ```
