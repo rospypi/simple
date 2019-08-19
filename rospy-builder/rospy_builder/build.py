@@ -290,6 +290,7 @@ def build(dest_dir: pathlib.Path, tmp: pathlib.Path) -> None:
     tmp.mkdir(parents=True, exist_ok=True)
     # core rospy packages
     build_package_from_local_package(tmp, pathlib.Path('rospy-all'))
+    build_package_from_local_package(tmp, pathlib.Path('rospy-builder'))
     build_package_from_github_package(
         tmp, 'ros-infrastructure/catkin_pkg', '0.4.13')
     build_package_from_github_package(
@@ -345,6 +346,9 @@ def build(dest_dir: pathlib.Path, tmp: pathlib.Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
+        '-a', '--all', action='store_true',
+        help='build all packages')
+    parser.add_argument(
         '-d', '--dest', default='index',
         help='destination directory of artifacts')
     parser.add_argument(
@@ -373,6 +377,9 @@ def main() -> None:
             package_dir.name,
             None,
             pathlib.Path(args.search_root))
+        sys.exit(0)
+    if not args.all:
+        parser.print_help()
         sys.exit(0)
     origin = None
     if args.include:

@@ -9,11 +9,12 @@ RUN apt-get update \
        libboost-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
-COPY install.sh /root/
-COPY build.py /root/
-RUN /root/install.sh
+COPY rospy-builder/install.sh /root/
 COPY rospy-all /root/rospy-all
 COPY tf2_py /root/tf2_py
+COPY rospy-builder /root/rospy-builder
 WORKDIR /root
-RUN python3 build.py
+RUN ./install.sh
+RUN pip3 install /root/rospy-builder
+RUN rospy-build -a
 CMD ["python3", "-m", "http.server"]
