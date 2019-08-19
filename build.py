@@ -289,7 +289,7 @@ def generate_index(
 def build(dest_dir: pathlib.Path, tmp: pathlib.Path) -> None:
     tmp.mkdir(parents=True, exist_ok=True)
     # core rospy packages
-    build_package_from_local_package(tmp, pathlib.Path('rospy3'))
+    build_package_from_local_package(tmp, pathlib.Path('rospy-all'))
     build_package_from_github_package(
         tmp, 'ros-infrastructure/catkin_pkg', '0.4.13')
     build_package_from_github_package(

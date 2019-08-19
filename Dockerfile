@@ -12,7 +12,7 @@ RUN apt-get update \
 COPY install.sh /root/
 COPY build.py /root/
 RUN /root/install.sh
-COPY rospy3 /root/rospy3
+COPY rospy-all /root/rospy-all
 COPY tf2_py /root/tf2_py
 WORKDIR /root
 RUN python3 build.py

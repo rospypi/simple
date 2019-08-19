@@ -1,9 +1,9 @@
 from setuptools import setup
 setup(
-    name='rospy3',
+    name='rospy-all',
     version='0.0.1',
     description='meta package to install required packages',
-    packages=['rospy3'],
+    packages=['rospy-all'],
     install_requires=[
         'actionlib',
         'actionlib_msgs',

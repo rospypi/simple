@@ -2,7 +2,7 @@
 
 ## What is this for?
 
-``rospy`` [packages](https://otamachan.github.io/rospy3/) without ROS installation. This can be run in a pure virtualenv.
+``rospy`` [packages](https://otamachan.github.io/rospy-index/) without ROS installation. This can be run in a pure virtualenv.
 It also supports ``tf2`` and experimetally Python3.
 So you can run ``rospy`` without ``catkin`` and Python2.
 
@@ -11,8 +11,8 @@ So you can run ``rospy`` without ``catkin`` and Python2.
 ```bash
 virtualenv -p python3 venv
 . ./venv/bin/activate
-pip install --extra-index-url https://otamachan.github.io/rospy3/ rospy3
-pip install --extra-index-url https://otamachan.github.io/rospy3/ tf2_ros
+pip install --extra-index-url https://otamachan.github.io/rospy-index/ rospy-all
+pip install --extra-index-url https://otamachan.github.io/rospy-index/ tf2_ros
 ```
 
 ## Sample
@@ -52,7 +52,7 @@ docker run --rm -p 8000:8000 localpypi
 ```bash
 virtualenv -p python3 venv
 . ./venv/bin/activate
-pip install --extra-index-url http://localhost:8000/index/ rospy3
+pip install --extra-index-url http://localhost:8000/index/ rospy-all
 ```
 
 
@@ -71,5 +71,5 @@ python -m http.server
 ```bash
 virtualenv -p python3 venv
 . ./venv/bin/activate
-pip install --extra-index-url http://localhost:8000/index/ rospy3
+pip install --extra-index-url http://localhost:8000/index/ rospy-all
 ```
