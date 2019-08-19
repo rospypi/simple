@@ -15,11 +15,11 @@ from typing import Optional
 
 
 def download_from_github(
-        dest: pathlib.Path,
+        dest_dir: pathlib.Path,
         repo: str,
         ver: str) -> pathlib.Path:
     url = f'https://github.com/{repo}/archive/{ver}.zip'
-    zip_file = dest / f'{repo.replace("/", "_")}_{ver}.zip'
+    zip_file = dest_dir / f'{repo.replace("/", "_")}_{ver}.zip'
     if not zip_file.exists():
         u = urlopen(url)
         with open(zip_file, 'wb') as outs:
@@ -34,7 +34,7 @@ def download_from_github(
 
 def unzip(
         zip_file: pathlib.Path,
-        dest: pathlib.Path,
+        dest_dir: pathlib.Path,
         subdir: Optional[pathlib.Path]=None) -> None:
     with open(zip_file, 'rb') as f:
         zipfp = zipfile.ZipFile(f)
@@ -46,9 +46,10 @@ def unzip(
                     name.relative_to(subdir)
                 except ValueError:
                     continue
-                fname = dest / pathlib.Path(*name.parts[len(subdir.parts):])
+                fname = dest_dir / pathlib.Path(
+                    *name.parts[len(subdir.parts):])
             else:
-                fname = dest / name
+                fname = dest_dir / name
             data = zipfp.read(zip_file_name)
             if zip_file_name.endswith('/'):
                 if not fname.exists():
@@ -95,11 +96,9 @@ def build_package(path: pathlib.Path, build_py2: bool=False) -> None:
 
 
 def generate_rosmsg_from_action(
-        dest: pathlib.Path,
-        package: str):
-    dest_dir = dest / package
-    msg_dir = dest_dir / 'msg'
-    files = dest_dir.glob('action/*.action')
+        dest_msg_dir: pathlib.Path,
+        source_action_dir: pathlib.Path) -> None:
+    files = source_action_dir.glob('action/*.action')
     for action in files:
         name = action.name[:-7]
         # parse
@@ -111,25 +110,25 @@ def generate_rosmsg_from_action(
             parts[-1].append(l)
         parts = ['\n'.join(p) for p in parts]
         assert len(parts) == 3
-        (msg_dir / (name + 'Goal.msg')).write_text(parts[0])
-        (msg_dir / (name + 'Result.msg')).write_text(parts[1])
-        (msg_dir / (name + 'Feedback.msg')).write_text(parts[2])
-        (msg_dir / (name + 'Action.msg')).write_text(
+        (dest_msg_dir / (name + 'Goal.msg')).write_text(parts[0])
+        (dest_msg_dir / (name + 'Result.msg')).write_text(parts[1])
+        (dest_msg_dir / (name + 'Feedback.msg')).write_text(parts[2])
+        (dest_msg_dir / (name + 'Action.msg')).write_text(
             f'''{name}ActionGoal action_goal
 {name}ActionResult action_result
 {name}ActionFeedback action_feedback
 ''')
-        (msg_dir / (name + 'ActionGoal.msg')).write_text(
+        (dest_msg_dir / (name + 'ActionGoal.msg')).write_text(
             f'''Header header
 actionlib_msgs/GoalID goal_id
 {name}Goal goal
 ''')
-        (msg_dir / (name + 'ActionResult.msg')).write_text(
+        (dest_msg_dir / (name + 'ActionResult.msg')).write_text(
             f'''Header header
 actionlib_msgs/GoalStatus status
 {name}Result result
 ''')
-        (msg_dir / (name + 'ActionFeedback.msg')).write_text(
+        (dest_msg_dir / (name + 'ActionFeedback.msg')).write_text(
             f'''Header header
 actionlib_msgs/GoalStatus status
 {name}Feedback result
@@ -137,19 +136,22 @@ actionlib_msgs/GoalStatus status
 
 
 def generate_package_from_rosmsg(
-        dest: pathlib.Path,
+        package_dir: pathlib.Path,
         package: str,
         version: Optional[str]=None,
-        search_root_path: Optional[pathlib.Path]=None) -> None:
+        search_root_dir: Optional[pathlib.Path]=None) -> None:
     import genpy.generator
     import genpy.genpy_main
-    search_path = {
-        package: [dest / package / 'msg']}
-    if search_root_path is not None:
-        for msg_path in search_root_path.glob('*/*/msg'):
-            search_path[msg_path.parent.name] = [msg_path]
+    search_dir = {
+        package: [package_dir / 'msg']}
+    if search_root_dir is not None:
+        for msg_dir in search_root_dir.glob('**/msg'):
+            p = msg_dir.parent.name
+            if p not in search_dir:
+                search_dir[p] = []
+            search_dir[p].append(msg_dir)
     for gentype in ('msg', 'srv'):
-        files = (dest / package / gentype).glob(f'*.{gentype}')
+        files = (package_dir / gentype).glob(f'*.{gentype}')
         if files:
             if gentype == 'msg':
                 generator = genpy.generator.MsgGenerator()
@@ -158,30 +160,30 @@ def generate_package_from_rosmsg(
             ret = generator.generate_messages(
                 package,
                 files,
-                dest / package / gentype,
-                search_path)
+                package_dir / package / gentype,
+                search_dir)
             if ret:
                 raise RuntimeError(
                     'Failed to generate python files from msg files.')
             genpy.generate_initpy.write_modules(
-                dest / package / gentype)
+                package_dir / package / gentype)
         genpy.generate_initpy.write_modules(
-            dest / package)
+            package_dir / package)
     if version is None:
         version = '0.0.0'
-        package_xml = dest / package / 'package.xml'
+        package_xml = package_dir / 'package.xml'
         if package_xml.exists():
             v = re.search('<version>(.*)</version>', package_xml.read_text())
             if v:
                 version = v.group(1)
-    (dest / 'setup.py').write_text(
+    (package_dir / 'setup.py').write_text(
         f'''from setuptools import find_packages, setup
 setup(name=\'{package}\', version=\'{version}\', packages=find_packages(),
       install_requires=[\'genpy\'])''')
 
 
 def build_package_from_github_package(
-        dest: pathlib.Path,
+        dest_dir: pathlib.Path,
         repo: str,
         version: str,
         subdir: Optional[pathlib.Path]=None) -> None:
@@ -189,14 +191,14 @@ def build_package_from_github_package(
         package = subdir.name
     else:
         package = repo.split('/')[1]
-    dest_dir = dest / package
-    zipfile = download_from_github(dest, repo, version)
-    unzip(zipfile, dest_dir, subdir)
-    build_package(dest_dir)
+    package_dir = dest_dir / package
+    zipfile = download_from_github(dest_dir, repo, version)
+    unzip(zipfile, package_dir, subdir)
+    build_package(package_dir)
 
 
 def build_package_from_github_msg(
-        dest: pathlib.Path,
+        dest_dir: pathlib.Path,
         repo: str,
         version: str,
         subdir: Optional[pathlib.Path]=None) -> None:
@@ -204,44 +206,45 @@ def build_package_from_github_msg(
         package = subdir.name
     else:
         package = repo.split('/')[1]
-    dest_dir = dest / package
-    zipfile = download_from_github(dest, repo, version)
+    package_dir = dest_dir / package
+    zipfile = download_from_github(dest_dir, repo, version)
     if subdir is None:
         subdir = pathlib.Path()
-    unzip(zipfile, dest_dir / package / 'msg', subdir / 'msg')
-    unzip(zipfile, dest_dir / package / 'srv', subdir / 'srv')
-    unzip(zipfile, dest_dir / package / 'action', subdir / 'action')
-    generate_rosmsg_from_action(dest_dir, package)
+    unzip(zipfile, package_dir / 'msg', subdir / 'msg')
+    unzip(zipfile, package_dir / 'srv', subdir / 'srv')
+    unzip(zipfile, package_dir / 'action', subdir / 'action')
+    generate_rosmsg_from_action(
+        package_dir / 'msg', pathlib.Path(package) / 'action')
     generate_package_from_rosmsg(
-        dest_dir, package, version, search_root_path=dest)
-    build_package(dest_dir)
+        package_dir, package, version, search_root_dir=dest_dir)
+    build_package(package_dir)
 
 
 def build_package_from_local_package(
-        dest: pathlib.Path,
-        local_path: pathlib.Path,
+        dest_dir: pathlib.Path,
+        local_dir: pathlib.Path,
         build_py2: bool=False) -> None:
-    package = local_path.name
-    dest_dir = dest / package
-    shutil.rmtree(dest_dir, ignore_errors=True)
-    shutil.copytree(local_path, dest_dir)
-    build_package(dest_dir, build_py2)
+    package = local_dir.name
+    package_dir = dest_dir / package
+    shutil.rmtree(package_dir, ignore_errors=True)
+    shutil.copytree(local_dir, package_dir)
+    build_package(package_dir, build_py2)
 
 
 def generate_package_index(
-        dest: pathlib.Path,
-        package_dir: pathlib.Path,
+        dest_dir: pathlib.Path,
+        source_package_dir: pathlib.Path,
         generate_html: bool,
         remote: Optional[git.remote.Remote]=None) -> bool:
     # https://www.python.org/dev/peps/pep-0503/
-    package = re.sub(r"[-_.]+", "-", package_dir.name).lower()
-    package_dest = dest / package
-    package_dest.mkdir(parents=True, exist_ok=True)
+    package = re.sub(r"[-_.]+", "-", source_package_dir.name).lower()
+    dest_package_dir = dest_dir / package
+    dest_package_dir.mkdir(parents=True, exist_ok=True)
     files = {}
-    for f in (package_dir / 'dist').glob('*'):
+    for f in (source_package_dir / 'dist').glob('*'):
         print(f.name)
         files[f.name] = f.name
-        shutil.copy(f, package_dest)
+        shutil.copy(f, dest_package_dir)
     if remote is not None:
         url = pathlib.Path(remote.url)
         raw_url = pathlib.Path(
@@ -257,33 +260,33 @@ def generate_package_index(
         files_list = ''.join([
             f'<a href="{url}">{f}</a><br>\n'
             for f, url in files.items()])
-        (package_dest / 'index.html').write_text(
+        (dest_package_dir / 'index.html').write_text(
             f'<!DOCTYPE html><html><body>\n{files_list}</body></html>')
     return len(files) != 0
 
 
 def generate_index(
-        dest: pathlib.Path,
+        dest_dir: pathlib.Path,
         source: pathlib.Path,
         generate_html: bool,
         remote: Optional[git.remote.Remote]=None) -> None:
-    dest.mkdir(parents=True, exist_ok=True)
+    dest_dir.mkdir(parents=True, exist_ok=True)
     packages = []
     for package_dir in source.glob('*'):
         if package_dir.is_dir():
             found = generate_package_index(
-                dest, package_dir, generate_html, remote)
+                dest_dir, package_dir, generate_html, remote)
             if found:
                 packages.append(package_dir.name)
     if generate_html:
         package_list = ''.join([
             f'<a href="{re.sub(r"[-_.]+", "-", p).lower()}/">{p}</a><br>\n'
             for p in sorted(packages)])
-        (dest / 'index.html').write_text(
+        (dest_dir / 'index.html').write_text(
             f'<!DOCTYPE html><html><body>\n{package_list}</body></html>')
 
 
-def build(dest: pathlib.Path, tmp: pathlib.Path) -> None:
+def build(dest_dir: pathlib.Path, tmp: pathlib.Path) -> None:
     tmp.mkdir(parents=True, exist_ok=True)
     # core rospy packages
     build_package_from_local_package(tmp, pathlib.Path('rospy3'))
@@ -359,14 +362,17 @@ def main() -> None:
     parser.add_argument(
         '-g', '--generate-msg', type=str, default=None,
         help='generate msg package')
+    parser.add_argument(
+        '-r', '--search-root', type=str, default=os.getcwd(),
+        help='message search path')
     args = parser.parse_args()
     if args.generate_msg is not None:
-        package_path = pathlib.Path(args.generate_msg)
+        package_dir = pathlib.Path(args.generate_msg)
         generate_package_from_rosmsg(
-            package_path,
-            package_path.name,
+            package_dir,
+            package_dir.name,
             None,
-            None)
+            pathlib.Path(args.search_root))
         sys.exit(0)
     origin = None
     if args.include:
@@ -380,11 +386,11 @@ def main() -> None:
         tmp = pathlib.Path(tempfile.gettempdir()) / 'build'
     else:
         tmp = pathlib.Path(tempfile.mkdtemp())
-    dest = pathlib.Path(args.dest)
+    dest_dir = pathlib.Path(args.dest)
     try:
         if not args.skip_build:
-            build(dest, tmp)
-        generate_index(dest, tmp, not args.no_index, origin)
+            build(dest_dir, tmp)
+        generate_index(dest_dir, tmp, not args.no_index, origin)
     finally:
         if not args.keep:
             shutil.rmtree(tmp)
