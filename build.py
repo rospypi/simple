@@ -139,7 +139,7 @@ actionlib_msgs/GoalStatus status
 def generate_package_from_rosmsg(
         dest: pathlib.Path,
         package: str,
-        version: str,
+        version: Optional[str]=None,
         search_root_path: Optional[pathlib.Path]=None) -> None:
     import genpy.generator
     import genpy.genpy_main
@@ -167,6 +167,13 @@ def generate_package_from_rosmsg(
                 dest / package / gentype)
         genpy.generate_initpy.write_modules(
             dest / package)
+    if version is None:
+        version = '0.0.0'
+        package_xml = dest / package / 'package.xml'
+        if package_xml.exists():
+            v = re.search('<version>(.*)</version>', package_xml.read_text())
+            if v:
+                version = v.group(1)
     (dest / 'setup.py').write_text(
         f'''from setuptools import find_packages, setup
 setup(name=\'{package}\', version=\'{version}\', packages=find_packages(),
@@ -349,7 +356,18 @@ def main() -> None:
     parser.add_argument(
         '-s', '--skip-build', action='store_true',
         help='skip build')
+    parser.add_argument(
+        '-g', '--generate-msg', type=str, default=None,
+        help='generate msg package')
     args = parser.parse_args()
+    if args.generate_msg is not None:
+        package_path = pathlib.Path(args.generate_msg)
+        generate_package_from_rosmsg(
+            package_path,
+            package_path.name,
+            None,
+            None)
+        sys.exit(0)
     origin = None
     if args.include:
         try:
