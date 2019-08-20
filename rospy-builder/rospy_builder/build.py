@@ -73,7 +73,7 @@ def build_package(path: pathlib.Path, build_py2: bool=False) -> None:
         new_kwargs = catkin_pkg.python_setup.original_generate_distutils_setup(
             **kwargs)
         if 'requires' in new_kwargs:
-            new_kwargs['install_requires'] = new_kwargs['requires']
+            new_kwargs['install_requires'] = list(new_kwargs['requires'])
             del new_kwargs['requires']
         return new_kwargs
     catkin_pkg.python_setup.original_generate_distutils_setup \
@@ -100,6 +100,7 @@ def generate_rosmsg_from_action(
         source_action_dir: pathlib.Path) -> None:
     files = source_action_dir.glob('*.action')
     for action in files:
+        dest_msg_dir.mkdir(parents=True, exist_ok=True)
         name = action.name[:-7]
         # parse
         parts = [[]]
@@ -319,6 +320,8 @@ def build(dest_dir: pathlib.Path, tmp: pathlib.Path) -> None:
         tmp, 'ros/actionlib', '1.12.0')
     build_package_from_github_package(
         tmp, 'ros/geometry', '1.12.0', pathlib.Path('tf'))
+    build_package_from_github_package(
+        tmp, 'ros/geometry2', '0.6.5', pathlib.Path('tf2_geometry_msgs'))
     # build_package_from_github_package(
     #     tmp, 'ros/geometry2', '0.6.5', pathlib.Path('tf2_ros'))
     build_package_from_local_package(tmp, pathlib.Path('tf2_py'), True)
@@ -341,6 +344,12 @@ def build(dest_dir: pathlib.Path, tmp: pathlib.Path) -> None:
             tmp, 'ros/common_msgs', '1.12.7', pathlib.Path(msg))
     build_package_from_github_msg(
         tmp, 'ros/geometry2', '0.6.5', pathlib.Path('tf2_msgs'))
+    build_package_from_github_msg(
+        tmp, 'ros-controls/control_msgs', '1.5.0', pathlib.Path('control_msgs'))
+    build_package_from_github_msg(
+        tmp, 'ros-planning/navigation_msgs', '1.13.0', pathlib.Path('map_msgs'))
+    build_package_from_github_msg(
+        tmp, 'ros-planning/navigation_msgs', '1.13.0', pathlib.Path('move_base_msgs'))
 
 
 def main() -> None:
