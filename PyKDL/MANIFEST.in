@@ -1,0 +1,7 @@
+include config.h
+include kdl/*.hpp
+include kdl/*.inl
+include kdl/utilities/*
+include orocos_kinematics_dynamics/orocos_kdl/src/*.cpp
+include orocos_kinematics_dynamics/python_orocos_kdl/PyKDL/*.sip
+include sip_*/*.h

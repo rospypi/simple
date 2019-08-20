@@ -91,7 +91,7 @@ def build_package(path: pathlib.Path, build_py2: bool=False) -> None:
     try:
         os.chdir(path)
         sys.argv = ['', 'sdist', 'bdist_wheel', '--universal']
-        exec(setup_code)
+        exec(setup_code, globals())
         if build_py2:
             # TODO: find a better way
             subprocess.call(['python2', 'setup.py', 'bdist_wheel'])
@@ -342,6 +342,8 @@ def build(dest_dir: pathlib.Path, tmp: pathlib.Path) -> None:
     build_package_from_local_package(tmp, pathlib.Path('tf2_py'), True)
     build_package_from_local_package(
         tmp, pathlib.Path('tf2_py/geometry2/tf2_ros'))
+    # PyKDL cannot support Python2 because sip does not support python2
+    build_package_from_local_package(tmp, pathlib.Path('PyKDL'), False)
     # extra ros messages
     common_msgs = [
         'geometry_msgs',

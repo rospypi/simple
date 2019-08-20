@@ -4,3 +4,6 @@
 [submodule "tf2_py/roscpp_core"]
 	path = tf2_py/roscpp_core
 	url = https://github.com/ros/roscpp_core.git
+[submodule "PyKDL/orocos_kinematics_dynamics"]
+	path = PyKDL/orocos_kinematics_dynamics
+	url = https://github.com/orocos/orocos_kinematics_dynamics.git
