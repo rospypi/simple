@@ -383,6 +383,8 @@ def main() -> None:
     args = parser.parse_args()
     if args.generate_msg is not None:
         package_dir = pathlib.Path(args.generate_msg)
+        generate_rosmsg_from_action(
+            package_dir / 'msg', package_dir / 'action')
         generate_package_from_rosmsg(
             package_dir,
             package_dir.name,
