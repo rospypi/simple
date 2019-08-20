@@ -98,7 +98,7 @@ def build_package(path: pathlib.Path, build_py2: bool=False) -> None:
 def generate_rosmsg_from_action(
         dest_msg_dir: pathlib.Path,
         source_action_dir: pathlib.Path) -> None:
-    files = source_action_dir.glob('action/*.action')
+    files = source_action_dir.glob('*.action')
     for action in files:
         name = action.name[:-7]
         # parse
@@ -214,7 +214,7 @@ def build_package_from_github_msg(
     unzip(zipfile, package_dir / 'srv', subdir / 'srv')
     unzip(zipfile, package_dir / 'action', subdir / 'action')
     generate_rosmsg_from_action(
-        package_dir / 'msg', pathlib.Path(package) / 'action')
+        package_dir / 'msg', package_dir / 'action')
     generate_package_from_rosmsg(
         package_dir, package, version, search_root_dir=dest_dir)
     build_package(package_dir)
