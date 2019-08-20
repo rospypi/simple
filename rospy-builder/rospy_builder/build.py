@@ -14,6 +14,11 @@ import git
 from typing import Optional
 
 
+REPLACE_LIST = {
+    'orocos_kdl': 'PyKDL',
+    }
+
+
 def download_from_github(
         dest_dir: pathlib.Path,
         repo: str,
@@ -73,7 +78,9 @@ def build_package(path: pathlib.Path, build_py2: bool=False) -> None:
         new_kwargs = catkin_pkg.python_setup.original_generate_distutils_setup(
             **kwargs)
         if 'requires' in new_kwargs:
-            new_kwargs['install_requires'] = list(new_kwargs['requires'])
+            new_kwargs['install_requires'] = [
+                p if p not in REPLACE_LIST else REPLACE_LIST[p]
+                for p in list(new_kwargs['requires'])]
             del new_kwargs['requires']
         return new_kwargs
     catkin_pkg.python_setup.original_generate_distutils_setup \
