@@ -334,9 +334,13 @@ def build(dest_dir: pathlib.Path, tmp: pathlib.Path) -> None:
     build_package_from_github_package(
         tmp, 'ros/geometry2', '0.6.5', pathlib.Path('tf2_geometry_msgs'))
     build_package_from_github_package(
-        tmp, 'ros-perception/vision_opencv', '1.13.0', pathlib.Path('cv_bridge'))
+        tmp, 'ros-perception/vision_opencv', '1.13.0',
+        pathlib.Path('cv_bridge'))
     build_package_from_github_package(
-        tmp, 'ros-perception/vision_opencv', '1.13.0', pathlib.Path('image_geometry'))
+        tmp, 'ros-perception/vision_opencv', '1.13.0',
+        pathlib.Path('image_geometry'))
+    build_package_from_github_package(
+        tmp, 'eric-wieser/ros_numpy', '0.0.2')
     # build_package_from_github_package(
     #     tmp, 'ros/geometry2', '0.6.5', pathlib.Path('tf2_ros'))
     build_package_from_local_package(tmp, pathlib.Path('tf2_py'), True)
