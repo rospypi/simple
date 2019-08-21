@@ -40,7 +40,7 @@ def download_from_github(
 def unzip(
         zip_file: pathlib.Path,
         dest_dir: pathlib.Path,
-        subdir: Optional[pathlib.Path]=None) -> None:
+        subdir: Optional[pathlib.Path] = None) -> None:
     with open(zip_file, 'rb') as f:
         zipfp = zipfile.ZipFile(f)
         for zip_file_name in zipfp.namelist():
@@ -63,7 +63,7 @@ def unzip(
                 fname.write_bytes(data)
 
 
-def build_package(path: pathlib.Path, build_py2: bool=False) -> None:
+def build_package(path: pathlib.Path, build_py2: bool = False) -> None:
     cwd = os.getcwd()
     original_argv = sys.argv
     setup_code = (path / 'setup.py').read_text()
@@ -72,6 +72,7 @@ def build_package(path: pathlib.Path, build_py2: bool=False) -> None:
     # to replace 'Requires' by 'Requires-Dist'
     # https://www.python.org/dev/peps/pep-0314/#requires-multiple-use
     # https://packaging.python.org/specifications/core-metadata/
+    import setuptools  # NOQA
     import catkin_pkg.python_setup
 
     def patched_generate_distutils_setup(**kwargs):
@@ -82,6 +83,12 @@ def build_package(path: pathlib.Path, build_py2: bool=False) -> None:
                 p if p not in REPLACE_LIST else REPLACE_LIST[p]
                 for p in list(new_kwargs['requires'])]
             del new_kwargs['requires']
+        if 'packages' in new_kwargs:
+            packages = new_kwargs['packages']
+            for subtype in ('msg', 'srv'):
+                sub_package = path.name + '.' + subtype
+                if (path / subtype).exists() and sub_package not in packages:
+                    packages.append(sub_package)
         return new_kwargs
     catkin_pkg.python_setup.original_generate_distutils_setup \
         = catkin_pkg.python_setup.generate_distutils_setup
@@ -146,8 +153,9 @@ actionlib_msgs/GoalStatus status
 def generate_package_from_rosmsg(
         package_dir: pathlib.Path,
         package: str,
-        version: Optional[str]=None,
-        search_root_dir: Optional[pathlib.Path]=None) -> None:
+        version: Optional[str] = None,
+        search_root_dir: Optional[pathlib.Path] = None,
+        dest_package_dir:  Optional[pathlib.Path] = None) -> None:
     import genpy.generator
     import genpy.genpy_main
     search_dir = {
@@ -158,6 +166,8 @@ def generate_package_from_rosmsg(
             if p not in search_dir:
                 search_dir[p] = []
             search_dir[p].append(msg_dir)
+    if dest_package_dir is None:
+        dest_package_dir = package_dir / package
     for gentype in ('msg', 'srv'):
         files = (package_dir / gentype).glob(f'*.{gentype}')
         if files:
@@ -168,24 +178,28 @@ def generate_package_from_rosmsg(
             ret = generator.generate_messages(
                 package,
                 files,
-                package_dir / package / gentype,
+                dest_package_dir / gentype,
                 search_dir)
             if ret:
                 raise RuntimeError(
                     'Failed to generate python files from msg files.')
+            if not (dest_package_dir / gentype / '__init__.py').exists():
+                genpy.generate_initpy.write_modules(
+                    dest_package_dir / gentype)
+        if not (dest_package_dir / '__init__.py').exists():
             genpy.generate_initpy.write_modules(
-                package_dir / package / gentype)
-        genpy.generate_initpy.write_modules(
-            package_dir / package)
-    if version is None:
-        version = '0.0.0'
-        package_xml = package_dir / 'package.xml'
-        if package_xml.exists():
-            v = re.search('<version>(.*)</version>', package_xml.read_text())
-            if v:
-                version = v.group(1)
-    (package_dir / 'setup.py').write_text(
-        f'''from setuptools import find_packages, setup
+                dest_package_dir)
+    if not (package_dir / 'setup.py').exists():
+        if version is None:
+            version = '0.0.0'
+            package_xml = package_dir / 'package.xml'
+            if package_xml.exists():
+                v = re.search('<version>(.*)</version>',
+                              package_xml.read_text())
+                if v:
+                    version = v.group(1)
+        (dest_package_dir / 'setup.py').write_text(
+            f'''from setuptools import find_packages, setup
 setup(name=\'{package}\', version=\'{version}\', packages=find_packages(),
       install_requires=[\'genpy\'])''')
 
@@ -194,7 +208,7 @@ def build_package_from_github_package(
         dest_dir: pathlib.Path,
         repo: str,
         version: str,
-        subdir: Optional[pathlib.Path]=None) -> None:
+        subdir: Optional[pathlib.Path] = None) -> None:
     if subdir:
         package = subdir.name
     else:
@@ -209,7 +223,7 @@ def build_package_from_github_msg(
         dest_dir: pathlib.Path,
         repo: str,
         version: str,
-        subdir: Optional[pathlib.Path]=None) -> None:
+        subdir: Optional[pathlib.Path] = None) -> None:
     if subdir:
         package = subdir.name
     else:
@@ -231,7 +245,7 @@ def build_package_from_github_msg(
 def build_package_from_local_package(
         dest_dir: pathlib.Path,
         local_dir: pathlib.Path,
-        build_py2: bool=False) -> None:
+        build_py2: bool = False) -> None:
     package = local_dir.name
     package_dir = dest_dir / package
     shutil.rmtree(package_dir, ignore_errors=True)
@@ -243,7 +257,7 @@ def generate_package_index(
         dest_dir: pathlib.Path,
         source_package_dir: pathlib.Path,
         generate_html: bool,
-        remote: Optional[git.remote.Remote]=None) -> bool:
+        remote: Optional[git.remote.Remote] = None) -> bool:
     # https://www.python.org/dev/peps/pep-0503/
     package = re.sub(r"[-_.]+", "-", source_package_dir.name).lower()
     dest_package_dir = dest_dir / package
@@ -277,7 +291,7 @@ def generate_index(
         dest_dir: pathlib.Path,
         source: pathlib.Path,
         generate_html: bool,
-        remote: Optional[git.remote.Remote]=None) -> None:
+        remote: Optional[git.remote.Remote] = None) -> None:
     dest_dir.mkdir(parents=True, exist_ok=True)
     packages = []
     for package_dir in source.glob('*'):
@@ -341,6 +355,13 @@ def build(dest_dir: pathlib.Path, tmp: pathlib.Path) -> None:
         pathlib.Path('image_geometry'))
     build_package_from_github_package(
         tmp, 'eric-wieser/ros_numpy', '0.0.2')
+    # dynamic_reconfigure
+    package = 'dynamic_reconfigure'
+    zipfile = download_from_github(tmp, 'ros/' + package, '1.6.0')
+    unzip(zipfile, tmp / package)
+    generate_package_from_rosmsg(
+        tmp / package, package, None, tmp, tmp / package / 'src' / package)
+    build_package(tmp / package)
     # build_package_from_github_package(
     #     tmp, 'ros/geometry2', '0.6.5', pathlib.Path('tf2_ros'))
     build_package_from_local_package(tmp, pathlib.Path('tf2_py'), True)
@@ -366,11 +387,14 @@ def build(dest_dir: pathlib.Path, tmp: pathlib.Path) -> None:
     build_package_from_github_msg(
         tmp, 'ros/geometry2', '0.6.5', pathlib.Path('tf2_msgs'))
     build_package_from_github_msg(
-        tmp, 'ros-controls/control_msgs', '1.5.0', pathlib.Path('control_msgs'))
+        tmp, 'ros-controls/control_msgs', '1.5.0',
+        pathlib.Path('control_msgs'))
     build_package_from_github_msg(
-        tmp, 'ros-planning/navigation_msgs', '1.13.0', pathlib.Path('map_msgs'))
+        tmp, 'ros-planning/navigation_msgs', '1.13.0',
+        pathlib.Path('map_msgs'))
     build_package_from_github_msg(
-        tmp, 'ros-planning/navigation_msgs', '1.13.0', pathlib.Path('move_base_msgs'))
+        tmp, 'ros-planning/navigation_msgs', '1.13.0',
+        pathlib.Path('move_base_msgs'))
 
 
 def main() -> None:
