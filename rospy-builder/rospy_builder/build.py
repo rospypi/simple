@@ -365,6 +365,12 @@ def build(dest_dir: pathlib.Path, tmp: pathlib.Path) -> None:
         pathlib.Path('image_geometry'))
     build_package_from_github_package(
         tmp, 'eric-wieser/ros_numpy', '0.0.2')
+    build_package_from_github_package(
+        tmp, 'ros/ros_comm', '1.14.3', pathlib.Path('tools/rosservice'))
+    build_package_from_github_package(
+        tmp, 'ros/ros_comm', '1.14.3', pathlib.Path('tools/rosmsg'))
+    build_package_from_github_package(
+        tmp, 'ros/ros_comm', '1.14.3', pathlib.Path('tools/rosbag'))
     # dynamic_reconfigure
     build_package_from_github_package(
         tmp, 'ros/dynamic_reconfigure', '1.6.0', None, 'src')
