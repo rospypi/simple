@@ -155,7 +155,7 @@ def generate_package_from_rosmsg(
         package: str,
         version: Optional[str] = None,
         search_root_dir: Optional[pathlib.Path] = None,
-        dest_package_dir:  Optional[pathlib.Path] = None) -> None:
+        srcdir:  Optional[pathlib.Path] = None) -> None:
     import genpy.generator
     import genpy.genpy_main
     search_dir = {
@@ -166,8 +166,11 @@ def generate_package_from_rosmsg(
             if p not in search_dir:
                 search_dir[p] = []
             search_dir[p].append(msg_dir)
-    if dest_package_dir is None:
+    if srcdir is None:
         dest_package_dir = package_dir / package
+    else:
+        dest_package_dir = package_dir / srcdir / package
+    print(dest_package_dir)
     for gentype in ('msg', 'srv'):
         files = (package_dir / gentype).glob(f'*.{gentype}')
         if files:
@@ -198,7 +201,7 @@ def generate_package_from_rosmsg(
                               package_xml.read_text())
                 if v:
                     version = v.group(1)
-        (dest_package_dir / 'setup.py').write_text(
+        (package_dir / 'setup.py').write_text(
             f'''from setuptools import find_packages, setup
 setup(name=\'{package}\', version=\'{version}\', packages=find_packages(),
       install_requires=[\'genpy\'])''')
@@ -208,7 +211,8 @@ def build_package_from_github_package(
         dest_dir: pathlib.Path,
         repo: str,
         version: str,
-        subdir: Optional[pathlib.Path] = None) -> None:
+        subdir: Optional[pathlib.Path] = None,
+        srcdir: Optional[pathlib.Path] = None) -> None:
     if subdir:
         package = subdir.name
     else:
@@ -216,6 +220,12 @@ def build_package_from_github_package(
     package_dir = dest_dir / package
     zipfile = download_from_github(dest_dir, repo, version)
     unzip(zipfile, package_dir, subdir)
+    if srcdir is not None and (
+            (package_dir / 'msg').exists() or
+            (package_dir / 'srv').exists()):
+        generate_package_from_rosmsg(
+            package_dir, package,
+            None, dest_dir, srcdir)
     build_package(package_dir)
 
 
@@ -342,7 +352,7 @@ def build(dest_dir: pathlib.Path, tmp: pathlib.Path) -> None:
     build_package_from_github_package(
         tmp, 'ros/actionlib', '1.12.0')
     build_package_from_github_package(
-        tmp, 'ros/geometry', '1.12.0', pathlib.Path('tf'))
+        tmp, 'ros/geometry', '1.12.0', pathlib.Path('tf'), pathlib.Path('src'))
     build_package_from_github_package(
         tmp, 'ros/geometry', '1.12.0', pathlib.Path('tf_conversions'))
     build_package_from_github_package(
@@ -356,12 +366,8 @@ def build(dest_dir: pathlib.Path, tmp: pathlib.Path) -> None:
     build_package_from_github_package(
         tmp, 'eric-wieser/ros_numpy', '0.0.2')
     # dynamic_reconfigure
-    package = 'dynamic_reconfigure'
-    zipfile = download_from_github(tmp, 'ros/' + package, '1.6.0')
-    unzip(zipfile, tmp / package)
-    generate_package_from_rosmsg(
-        tmp / package, package, None, tmp, tmp / package / 'src' / package)
-    build_package(tmp / package)
+    build_package_from_github_package(
+        tmp, 'ros/dynamic_reconfigure', '1.6.0', None, 'src')
     # build_package_from_github_package(
     #     tmp, 'ros/geometry2', '0.6.5', pathlib.Path('tf2_ros'))
     build_package_from_local_package(tmp, pathlib.Path('tf2_py'), True)
