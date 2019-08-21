@@ -186,9 +186,8 @@ def generate_package_from_rosmsg(
             if ret:
                 raise RuntimeError(
                     'Failed to generate python files from msg files.')
-            if not (dest_package_dir / gentype / '__init__.py').exists():
-                genpy.generate_initpy.write_modules(
-                    dest_package_dir / gentype)
+            genpy.generate_initpy.write_modules(
+                dest_package_dir / gentype)
         if not (dest_package_dir / '__init__.py').exists():
             genpy.generate_initpy.write_modules(
                 dest_package_dir)
