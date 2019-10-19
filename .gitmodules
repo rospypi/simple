@@ -7,3 +7,6 @@
 [submodule "PyKDL/orocos_kinematics_dynamics"]
 	path = PyKDL/orocos_kinematics_dynamics
 	url = https://github.com/orocos/orocos_kinematics_dynamics.git
+[submodule "cv_bridge/vision_opencv"]
+	path = cv_bridge/vision_opencv
+	url = https://github.com/ros-perception/vision_opencv.git
