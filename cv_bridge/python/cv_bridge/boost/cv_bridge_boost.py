@@ -107,15 +107,15 @@ def cvtColorForDisplay():
     raise NotImplemented("cvtColorForDisplay is not implemented yet")
 
 
-def CV_MAT_CNWrap():
-    raise NotImplemented("CV_MAT_CNWrap is not implemented yet")
+def CV_MAT_CNWrap(flags):
+    return ((((flags) & ((63) << 3)) >> 3) + 1)
 
 
-def CV_MAT_DEPTHWrap():
-    raise NotImplemented("CV_MAT_DEPTHWrap is not implemented yet")
+def CV_MAT_DEPTHWrap(flags):
+    return ((flags) & 7)
 
 
 def cvtColor2(img, encoding_in, encoding_out):
-    conversion = _CV_CONVERSTIONS((encoding_in, encoding_out))
+    conversion = _CV_CONVERSTIONS[(encoding_in, encoding_out)]
     # depth conversion is not yet implemented
     return cv2.cvtColor(img, conversion)
