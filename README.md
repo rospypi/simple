@@ -1,8 +1,10 @@
 # rospy for pure Python
 
+**THIS IS NOT THE OFFICIAL ROSPY INDEX SERVER**
+
 ## What is this for?
 
-``rospy`` [packages](https://otamachan.github.io/rospy-index/) without ROS installation. This can be run in a pure virtualenv.
+``rospy`` [packages](https://rospypi.github.io/simple/) without ROS installation. This can be run in a pure virtualenv.
 It also supports ``tf2`` and experimetally Python3.
 So you can run ``rospy`` without ``catkin`` and Python2.
 
@@ -11,8 +13,8 @@ So you can run ``rospy`` without ``catkin`` and Python2.
 ```bash
 virtualenv -p python3 venv
 . ./venv/bin/activate
-pip install --extra-index-url https://otamachan.github.io/rospy-index/ rospy-all
-pip install --extra-index-url https://otamachan.github.io/rospy-index/ tf2_ros
+pip install --extra-index-url https://rospypi.github.io/simple/ rospy-all
+pip install --extra-index-url https://rospypi.github.io/simple/ tf2_ros
 ```
 
 ## Sample
@@ -63,7 +65,7 @@ pip install --extra-index-url http://localhost:8000/index/ rospy-all
 ```bash
 virtualenv -p python3 dev
 . ./dev/bin/activate
-pip install --extra-index-url https://otamachan.github.io/rospy-index/ -e rospy-builder/
+pip install --extra-index-url https://rospypi.github.io/simple/ -e rospy-builder/
 rospy-build -a
 python -m http.server
 ```

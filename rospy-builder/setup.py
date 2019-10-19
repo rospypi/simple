@@ -5,7 +5,7 @@ setup(
     description='rospy package build tool',
     author='Tamamki Nishino',
     author_email='otamachan@gmail.com',
-    url='https://otamachan.github.io/rospy-index',
+    url='https://rospypi.github.io/simple',
     packages=['rospy_builder'],
     install_requires=[
         'catkin_pkg',
