@@ -369,6 +369,9 @@ def build(dest_dir: pathlib.Path, tmp: pathlib.Path) -> None:
         tmp, 'ros/ros_comm', '1.14.3', pathlib.Path('tools/rosbag'))
     build_package_from_github_package(
         tmp, 'ros/ros_comm', '1.14.3', pathlib.Path('tools/rosmaster'))
+    build_package_from_github_package(
+        tmp, 'ros/ros_comm', '1.14.3',
+        pathlib.Path('utilities/message_filters'))
     # dynamic_reconfigure
     build_package_from_github_package(
         tmp, 'ros/dynamic_reconfigure', '1.6.0', None, 'src')
