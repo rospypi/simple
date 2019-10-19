@@ -63,7 +63,7 @@ pip install --extra-index-url http://localhost:8000/index/ rospy-all
 ```bash
 virtualenv -p python3 dev
 . ./dev/bin/activate
-pip install --extra-index-url http://otamachan.github.io/rospy-index/ -e rospy-builder/
+pip install --extra-index-url https://otamachan.github.io/rospy-index/ -e rospy-builder/
 rospy-build -a
 python -m http.server
 ```
