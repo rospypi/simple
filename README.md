@@ -1,6 +1,6 @@
-# rospy for pure Python
+# **THIS IS NOT THE OFFICIAL ROSPY INDEX SERVER**
 
-**THIS IS NOT THE OFFICIAL ROSPY INDEX SERVER**
+# rospy for pure Python
 
 ## What is this for?
 
