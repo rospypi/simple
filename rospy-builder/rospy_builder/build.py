@@ -146,7 +146,7 @@ actionlib_msgs/GoalStatus status
         (dest_msg_dir / (name + 'ActionFeedback.msg')).write_text(
             f'''Header header
 actionlib_msgs/GoalStatus status
-{name}Feedback result
+{name}Feedback feedback
 ''')
 
 
