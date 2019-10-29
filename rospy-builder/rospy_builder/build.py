@@ -343,7 +343,7 @@ def build(dest_dir: pathlib.Path, tmp: pathlib.Path) -> None:
     build_package_from_github_msg(
         tmp, 'ros/std_msgs', '0.5.12')
     build_package_from_github_msg(
-        tmp, 'ros/ros_comm', ros_comm_version, pathlib.Path('clients/roscpp'))
+        tmp, 'ros/ros_comm', '1.14.3', pathlib.Path('clients/roscpp'))
     build_package_from_github_msg(
         tmp, 'ros/ros_comm_msgs', '1.11.2', pathlib.Path('rosgraph_msgs'))
     build_package_from_github_msg(
