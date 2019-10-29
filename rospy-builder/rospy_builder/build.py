@@ -334,15 +334,16 @@ def build(dest_dir: pathlib.Path, tmp: pathlib.Path) -> None:
         tmp, 'ros/genmsg', '0.5.12')
     build_package_from_github_package(
             tmp, 'ros/catkin', '0.7.18')
+    ros_comm_version = '5da095d06bccbea708394b399215d8a066797266'
     build_package_from_github_package(
-        tmp, 'ros/ros_comm', '1.14.3', pathlib.Path('clients/rospy'))
+        tmp, 'ros/ros_comm', ros_comm_version, pathlib.Path('clients/rospy'))
     build_package_from_github_package(
-        tmp, 'ros/ros_comm', '1.14.3', pathlib.Path('tools/rosgraph'))
+        tmp, 'ros/ros_comm', ros_comm_version, pathlib.Path('tools/rosgraph'))
     # core ros message packages
     build_package_from_github_msg(
         tmp, 'ros/std_msgs', '0.5.12')
     build_package_from_github_msg(
-        tmp, 'ros/ros_comm', '1.14.3', pathlib.Path('clients/roscpp'))
+        tmp, 'ros/ros_comm', ros_comm_version, pathlib.Path('clients/roscpp'))
     build_package_from_github_msg(
         tmp, 'ros/ros_comm_msgs', '1.11.2', pathlib.Path('rosgraph_msgs'))
     build_package_from_github_msg(
@@ -362,15 +363,15 @@ def build(dest_dir: pathlib.Path, tmp: pathlib.Path) -> None:
     build_package_from_github_package(
         tmp, 'eric-wieser/ros_numpy', '0.0.2')
     build_package_from_github_package(
-        tmp, 'ros/ros_comm', '1.14.3', pathlib.Path('tools/rosservice'))
+        tmp, 'ros/ros_comm', ros_comm_version, pathlib.Path('tools/rosservice'))
     build_package_from_github_package(
-        tmp, 'ros/ros_comm', '1.14.3', pathlib.Path('tools/rosmsg'))
+        tmp, 'ros/ros_comm', ros_comm_version, pathlib.Path('tools/rosmsg'))
     build_package_from_github_package(
-        tmp, 'ros/ros_comm', '1.14.3', pathlib.Path('tools/rosbag'))
+        tmp, 'ros/ros_comm', ros_comm_version, pathlib.Path('tools/rosbag'))
     build_package_from_github_package(
-        tmp, 'ros/ros_comm', '1.14.3', pathlib.Path('tools/rosmaster'))
+        tmp, 'ros/ros_comm', ros_comm_version, pathlib.Path('tools/rosmaster'))
     build_package_from_github_package(
-        tmp, 'ros/ros_comm', '1.14.3',
+        tmp, 'ros/ros_comm', ros_comm_version,
         pathlib.Path('utilities/message_filters'))
     # dynamic_reconfigure
     build_package_from_github_package(
