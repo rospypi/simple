@@ -77,6 +77,6 @@ setup(
         'sdist': _sdist,
         'build_ext': _build_ext,
     },
-    install_requires=['sip'],
+    install_requires=['sip<5.0.0'],
     zip_safe=False,
 )
