@@ -75,3 +75,19 @@ virtualenv -p python3 venv
 . ./venv/bin/activate
 pip install --extra-index-url http://localhost:8000/index/ rospy-all
 ```
+
+## Generate Message Python Package
+
+```bash
+git clone https://github.com/rospypi/simple.git
+cd simple
+virtualenv -p python3 venv
+. ./venv/bin/activate
+pip install --extra-index-url https://rospypi.github.io/simple/ -e rospy-builder/
+mkdir msgs
+(cd msgs; git clone https://github.com/ros/std_msgs.git)
+(cd msgs; git clone https://github.com/ros/common_msgs.git)
+# (cd msgs; any repository that is depended on your message)
+rospy-build -g your_package_path -r msgs/
+# ex.rospy-build -g ros_tutorials/rospy_tutorials/ -r msgs/
+```
