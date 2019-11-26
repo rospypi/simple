@@ -363,13 +363,17 @@ def build(dest_dir: pathlib.Path, tmp: pathlib.Path) -> None:
     build_package_from_github_package(
         tmp, 'eric-wieser/ros_numpy', '0.0.2')
     build_package_from_github_package(
-        tmp, 'ros/ros_comm', ros_comm_version, pathlib.Path('tools/rosservice'))
+        tmp, 'ros/ros_comm', ros_comm_version,
+        pathlib.Path('tools/rosservice'))
     build_package_from_github_package(
         tmp, 'ros/ros_comm', ros_comm_version, pathlib.Path('tools/rosmsg'))
     build_package_from_github_package(
         tmp, 'ros/ros_comm', ros_comm_version, pathlib.Path('tools/rosbag'))
     build_package_from_github_package(
         tmp, 'ros/ros_comm', ros_comm_version, pathlib.Path('tools/rosmaster'))
+    build_package_from_github_package(
+        tmp, 'ros/ros_comm', ros_comm_version,
+        pathlib.Path('tools/rostest'))
     build_package_from_github_package(
         tmp, 'ros/ros_comm', ros_comm_version,
         pathlib.Path('utilities/message_filters'))
