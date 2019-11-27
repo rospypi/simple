@@ -376,7 +376,16 @@ def build(dest_dir: pathlib.Path, tmp: pathlib.Path) -> None:
         pathlib.Path('tools/rostest'))
     build_package_from_github_package(
         tmp, 'ros/ros_comm', ros_comm_version,
+        pathlib.Path('tools/roslaunch'))
+    build_package_from_github_package(
+        tmp, 'ros/ros_comm', ros_comm_version,
         pathlib.Path('utilities/message_filters'))
+    build_package_from_github_package(
+        tmp, 'ros/ros', '1.14.7',
+        pathlib.Path('tools/rosunit'))
+    build_package_from_github_package(
+        tmp, 'ros/ros', '1.14.7',
+        pathlib.Path('tools/rosclean'))
     # dynamic_reconfigure
     build_package_from_github_package(
         tmp, 'ros/dynamic_reconfigure', '1.6.0', None, 'src')
