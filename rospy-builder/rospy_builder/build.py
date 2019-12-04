@@ -398,6 +398,8 @@ def build(dest_dir: pathlib.Path, tmp: pathlib.Path) -> None:
     build_package_from_local_package(tmp, pathlib.Path('PyKDL'), False)
     # cv_bridge
     build_package_from_local_package(tmp, pathlib.Path('cv_bridge'), True)
+    # roslz4
+    build_package_from_local_package(tmp, pathlib.Path('roslz4'), True)
     # extra ros messages
     common_msgs = [
         'geometry_msgs',
