@@ -426,6 +426,9 @@ def build(dest_dir: pathlib.Path, tmp: pathlib.Path) -> None:
     build_package_from_github_msg(
         tmp, 'ros-planning/navigation_msgs', '1.13.0',
         pathlib.Path('move_base_msgs'))
+    build_package_from_github_msg(
+        tmp, 'ros-simulation/gazebo_ros_pkgs', '2.5.19',
+        pathlib.Path('gazebo_msgs'))
 
 
 def main() -> None:
