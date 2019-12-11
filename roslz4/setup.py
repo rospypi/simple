@@ -22,12 +22,12 @@ setup(
             'roscpp_core/cpp_common/include',
         ],
         extra_compile_args=[
-            '-fpermissive',
+            '-Wno-strict-prototypes',
             '-Wno-missing-field-initializers',
             '-Wno-unused-variable',
             '-Wno-strict-aliasing',
         ],
-        define_macro=[
+        define_macros=[
             ('XXH_NAMESPACE', 'ROSLZ4_'),
         ],
         extra_link_args=[
