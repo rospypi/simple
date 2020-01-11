@@ -1,7 +1,7 @@
 from setuptools import setup
 setup(
     name='rospy-builder',
-    version='1.0',
+    version='0.2.0',
     description='rospy package build tool',
     author='Tamamki Nishino',
     author_email='otamachan@gmail.com',
@@ -17,7 +17,7 @@ setup(
         ],
     entry_points={
         'console_scripts': [
-            'rospy-build = rospy_builder.build:main',
+            'rospy-build = rospy_builder.build:cli',
         ],
     },
 )

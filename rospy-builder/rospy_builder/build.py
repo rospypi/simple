@@ -1,33 +1,51 @@
 #!/usr/bin/env python
-import argparse
+import hashlib
 import os
 import pathlib
 import re
 import shutil
 import subprocess
 import sys
+import tarfile
 import tempfile
 from urllib.request import urlopen
 import zipfile
 
+import click
 import git
-from typing import Optional
+import yaml
+from dataclasses import dataclass, field
+from typing import List, Optional
 
 
-REPLACE_LIST = {
-    'orocos_kdl': 'PyKDL',
-    }
+def normalize(name: str) -> str:
+    # https://www.python.org/dev/peps/pep-0503/
+    return re.sub(r"[-_.]+", "-", name).lower()
+
+
+def tarsum(file_name: pathlib.Path) -> str:
+    tar = tarfile.open(mode="r|*", fileobj=file_name.open("rb"))
+    chunk_size = 512 * 1024
+    h = hashlib.sha256()
+    for member in tar:
+        if not member.isfile():
+            continue
+        f = tar.extractfile(member)
+        data = f.read(chunk_size)
+        while data:
+            h.update(data)
+            data = f.read(chunk_size)
+    return h.hexdigest()
 
 
 def download_from_github(
-        dest_dir: pathlib.Path,
-        repo: str,
-        ver: str) -> pathlib.Path:
-    url = f'https://github.com/{repo}/archive/{ver}.zip'
+    dest_dir: pathlib.Path, repo: str, ver: str
+) -> pathlib.Path:
+    url = f"https://github.com/{repo}/archive/{ver}.zip"
     zip_file = dest_dir / f'{repo.replace("/", "_")}_{ver}.zip'
     if not zip_file.exists():
         u = urlopen(url)
-        with open(zip_file, 'wb') as outs:
+        with open(zip_file, "wb") as outs:
             block_sz = 8192
             while True:
                 buf = u.read(block_sz)
@@ -38,38 +56,48 @@ def download_from_github(
 
 
 def unzip(
-        zip_file: pathlib.Path,
-        dest_dir: pathlib.Path,
-        subdir: Optional[pathlib.Path] = None) -> None:
-    with open(zip_file, 'rb') as f:
+    zip_file: pathlib.Path,
+    dest_dir: pathlib.Path,
+    sub_dir: Optional[pathlib.Path] = None,
+) -> None:
+    with open(zip_file, "rb") as f:
         zipfp = zipfile.ZipFile(f)
         for zip_file_name in zipfp.namelist():
             original = pathlib.Path(zip_file_name)
             name = pathlib.Path(*original.parts[1:])
-            if subdir:
+            if sub_dir:
                 try:
-                    name.relative_to(subdir)
+                    name.relative_to(sub_dir)
                 except ValueError:
                     continue
                 fname = dest_dir / pathlib.Path(
-                    *name.parts[len(subdir.parts):])
+                    *name.parts[len(sub_dir.parts) :]
+                )
             else:
                 fname = dest_dir / name
             data = zipfp.read(zip_file_name)
-            if zip_file_name.endswith('/'):
+            if zip_file_name.endswith("/"):
                 if not fname.exists():
                     fname.mkdir(parents=True)
             else:
                 fname.write_bytes(data)
 
 
-def build_package(path: pathlib.Path, build_py2: bool = False) -> None:
-    cwd = os.getcwd()
-    original_argv = sys.argv
-    setup_code = (path / 'setup.py').read_text()
+def build_package(
+    package_dir: pathlib.Path,
+    dest_dir: pathlib.Path,
+    build_py2_binary: bool = False,
+    release_version: Optional[str] = None,
+    requires: List[str] = [],
+    unrequires: List[str] = [],
+    compare: bool = True,
+) -> None:
+    setup_code = (package_dir / "setup.py").read_text()
 
     # Patch catkin_pkg.python_setup.generate_distutils_setup
-    # to replace 'Requires' by 'Requires-Dist'
+    # 1. to replace 'Requires' by 'Requires-Dist'
+    # 2. modify install_requires and version
+    # 3. add packages for ROS message
     # https://www.python.org/dev/peps/pep-0314/#requires-multiple-use
     # https://packaging.python.org/specifications/core-metadata/
     import setuptools  # NOQA
@@ -77,421 +105,489 @@ def build_package(path: pathlib.Path, build_py2: bool = False) -> None:
 
     def patched_generate_distutils_setup(**kwargs):
         new_kwargs = catkin_pkg.python_setup.original_generate_distutils_setup(
-            **kwargs)
-        if 'requires' in new_kwargs:
-            new_kwargs['install_requires'] = [
-                p if p not in REPLACE_LIST else REPLACE_LIST[p]
-                for p in list(new_kwargs['requires'])]
-            del new_kwargs['requires']
-        if 'packages' in new_kwargs:
-            packages = new_kwargs['packages']
-            for subtype in ('msg', 'srv'):
-                sub_package = path.name + '.' + subtype
-                if (path / subtype).exists() and sub_package not in packages:
+            **kwargs
+        )
+        if "requires" in new_kwargs:
+            new_kwargs["install_requires"] = sorted(
+                list(new_kwargs["requires"])
+            )
+            del new_kwargs["requires"]
+        if len(requires) > 0 or len(unrequires) > 0:
+            new_kwargs["install_requires"] = sorted(
+                set(new_kwargs.get("install_requires", [])) - set(unrequires)
+                | set(requires)
+            )
+        if (
+            "install_requires" in new_kwargs
+            and "genpy" in new_kwargs["install_requires"]
+        ):
+            new_kwargs["install_requires"].remove("genpy")
+            new_kwargs["install_requires"].append("genpy<2000")
+            new_kwargs["install_requires"].sort()
+        if "packages" in new_kwargs:
+            packages = new_kwargs["packages"]
+            for subtype in ("msg", "srv"):
+                sub_package = package_dir.name + "." + subtype
+                if (
+                    package_dir / subtype
+                ).exists() and sub_package not in packages:
                     packages.append(sub_package)
+        if release_version is not None:
+            new_kwargs["version"] = release_version
         return new_kwargs
-    catkin_pkg.python_setup.original_generate_distutils_setup \
-        = catkin_pkg.python_setup.generate_distutils_setup
-    catkin_pkg.python_setup.generate_distutils_setup \
-        = patched_generate_distutils_setup
+
+    catkin_pkg.python_setup.original_generate_distutils_setup = (
+        catkin_pkg.python_setup.generate_distutils_setup
+    )
+    catkin_pkg.python_setup.generate_distutils_setup = (
+        patched_generate_distutils_setup
+    )
 
     try:
-        os.chdir(path)
-        sys.argv = ['', 'sdist', 'bdist_wheel', '--universal']
+        cwd = os.getcwd()
+        original_argv = sys.argv
+        dest_package_dir = dest_dir / normalize(package_dir.name)
+        dest_package_dir.mkdir(parents=True, exist_ok=True)
+        os.chdir(package_dir)
+        # build source package
+        sys.argv = ["", "sdist"]
         exec(setup_code, globals())
-        if build_py2:
+        # check before copy
+        tar_file = next((package_dir / "dist").glob("*.tar.gz"))
+        if (dest_package_dir / tar_file.name).exists():
+            print(dest_package_dir / tar_file.name)
+            if compare:
+                digest0 = tarsum(tar_file)
+                digest1 = tarsum(dest_package_dir / tar_file.name)
+                if digest0 != digest1:
+                    print(
+                        "Hash is same! Remove or change the version."
+                        f"{tar_file.name}"
+                    )
+                    shutil.copy(tar_file, cwd + "/" + tar_file.name + ".new")
+                    shutil.copy(
+                        dest_package_dir / tar_file.name,
+                        cwd + "/" + tar_file.name + ".org",
+                    )
+                    sys.exit(1)
+                else:
+                    print(f"content is not changed: {tar_file.name}")
+            return
+        print("copy")
+        shutil.copy(tar_file, dest_package_dir)
+        # if it's updated build the binary package
+        sys.argv = ["", "bdist_wheel", "--universal"]
+        exec(setup_code, globals())
+        if build_py2_binary:
             # TODO: find a better way
-            subprocess.call(['python2', 'setup.py', 'bdist_wheel'])
+            subprocess.call(["python2", "setup.py", "bdist_wheel"])
+        for wheel in (package_dir / "dist").glob("*.whl"):
+            shutil.copy(wheel, dest_package_dir)
     finally:
         sys.argv = original_argv
         os.chdir(cwd)
-        catkin_pkg.python_setup.generate_distutils_setup \
-            = catkin_pkg.python_setup.original_generate_distutils_setup
+        catkin_pkg.python_setup.generate_distutils_setup = (
+            catkin_pkg.python_setup.original_generate_distutils_setup
+        )
 
 
 def generate_rosmsg_from_action(
-        dest_msg_dir: pathlib.Path,
-        source_action_dir: pathlib.Path) -> None:
-    files = source_action_dir.glob('*.action')
+    dest_msg_dir: pathlib.Path, source_action_dir: pathlib.Path
+) -> None:
+    files = source_action_dir.glob("*.action")
     for action in files:
         dest_msg_dir.mkdir(parents=True, exist_ok=True)
         name = action.name[:-7]
         # parse
         parts = [[]]
-        for l in action.read_text().split('\n'):
-            if l.startswith('---'):
+        for l in action.read_text().split("\n"):
+            if l.startswith("---"):
                 parts.append([])
                 continue
             parts[-1].append(l)
-        parts = ['\n'.join(p) for p in parts]
+        parts = ["\n".join(p) for p in parts]
         assert len(parts) == 3
-        (dest_msg_dir / (name + 'Goal.msg')).write_text(parts[0])
-        (dest_msg_dir / (name + 'Result.msg')).write_text(parts[1])
-        (dest_msg_dir / (name + 'Feedback.msg')).write_text(parts[2])
-        (dest_msg_dir / (name + 'Action.msg')).write_text(
-            f'''{name}ActionGoal action_goal
+        (dest_msg_dir / (name + "Goal.msg")).write_text(parts[0])
+        (dest_msg_dir / (name + "Result.msg")).write_text(parts[1])
+        (dest_msg_dir / (name + "Feedback.msg")).write_text(parts[2])
+        (dest_msg_dir / (name + "Action.msg")).write_text(
+            f"""{name}ActionGoal action_goal
 {name}ActionResult action_result
 {name}ActionFeedback action_feedback
-''')
-        (dest_msg_dir / (name + 'ActionGoal.msg')).write_text(
-            f'''Header header
+"""
+        )
+        (dest_msg_dir / (name + "ActionGoal.msg")).write_text(
+            f"""Header header
 actionlib_msgs/GoalID goal_id
 {name}Goal goal
-''')
-        (dest_msg_dir / (name + 'ActionResult.msg')).write_text(
-            f'''Header header
+"""
+        )
+        (dest_msg_dir / (name + "ActionResult.msg")).write_text(
+            f"""Header header
 actionlib_msgs/GoalStatus status
 {name}Result result
-''')
-        (dest_msg_dir / (name + 'ActionFeedback.msg')).write_text(
-            f'''Header header
+"""
+        )
+        (dest_msg_dir / (name + "ActionFeedback.msg")).write_text(
+            f"""Header header
 actionlib_msgs/GoalStatus status
 {name}Feedback feedback
-''')
+"""
+        )
 
 
 def generate_package_from_rosmsg(
-        package_dir: pathlib.Path,
-        package: str,
-        version: Optional[str] = None,
-        search_root_dir: Optional[pathlib.Path] = None,
-        srcdir:  Optional[pathlib.Path] = None) -> None:
+    package_dir: pathlib.Path,
+    package: str,
+    version: Optional[str] = None,
+    search_root_dir: Optional[pathlib.Path] = None,
+    src_dir: Optional[pathlib.Path] = None,
+    release_version: Optional[str] = None,
+) -> None:
     import genpy.generator
     import genpy.genpy_main
-    search_dir = {
-        package: [package_dir / 'msg']}
+
+    search_dir = {package: [package_dir / "msg"]}
     if search_root_dir is not None:
-        for msg_dir in search_root_dir.glob('**/msg'):
+        for msg_dir in search_root_dir.glob("**/msg"):
             p = msg_dir.parent.name
             if p not in search_dir:
                 search_dir[p] = []
             search_dir[p].append(msg_dir)
-    if srcdir is None:
+    if src_dir is None:
         dest_package_dir = package_dir / package
     else:
-        dest_package_dir = package_dir / srcdir / package
+        dest_package_dir = package_dir / src_dir / package
     print(dest_package_dir)
-    for gentype in ('msg', 'srv'):
-        files = (package_dir / gentype).glob(f'*.{gentype}')
+    for gentype in ("msg", "srv"):
+        files = (package_dir / gentype).glob(f"*.{gentype}")
         if files:
-            if gentype == 'msg':
+            if gentype == "msg":
                 generator = genpy.generator.MsgGenerator()
-            elif gentype == 'srv':
+            elif gentype == "srv":
                 generator = genpy.generator.SrvGenerator()
             ret = generator.generate_messages(
-                package,
-                files,
-                dest_package_dir / gentype,
-                search_dir)
+                package, files, dest_package_dir / gentype, search_dir
+            )
             if ret:
                 raise RuntimeError(
-                    'Failed to generate python files from msg files.')
-            genpy.generate_initpy.write_modules(
-                dest_package_dir / gentype)
-        if not (dest_package_dir / '__init__.py').exists():
-            genpy.generate_initpy.write_modules(
-                dest_package_dir)
-    if not (package_dir / 'setup.py').exists():
+                    "Failed to generate python files from msg files."
+                )
+            genpy.generate_initpy.write_modules(dest_package_dir / gentype)
+        if not (dest_package_dir / "__init__.py").exists():
+            genpy.generate_initpy.write_modules(dest_package_dir)
+    if not (package_dir / "setup.py").exists():
         if version is None:
-            version = '0.0.0'
-            package_xml = package_dir / 'package.xml'
+            version = "0.0.0"
+            package_xml = package_dir / "package.xml"
             if package_xml.exists():
-                v = re.search('<version>(.*)</version>',
-                              package_xml.read_text())
+                v = re.search(
+                    "<version>(.*)</version>", package_xml.read_text()
+                )
                 if v:
                     version = v.group(1)
-        (package_dir / 'setup.py').write_text(
-            f'''from setuptools import find_packages, setup
+        if release_version is not None:
+            version = release_version
+        (package_dir / "setup.py").write_text(
+            f"""from setuptools import find_packages, setup
 setup(name=\'{package}\', version=\'{version}\', packages=find_packages(),
-      install_requires=[\'genpy\'])''')
+      install_requires=[\'genpy<2000\'])"""
+        )
 
 
 def build_package_from_github_package(
-        dest_dir: pathlib.Path,
-        repo: str,
-        version: str,
-        subdir: Optional[pathlib.Path] = None,
-        srcdir: Optional[pathlib.Path] = None) -> None:
-    if subdir:
-        package = subdir.name
+    build_dir: pathlib.Path,
+    dest_dir: pathlib.Path,
+    repository: str,
+    version: str,
+    sub_dir: Optional[pathlib.Path] = None,
+    src_dir: Optional[pathlib.Path] = None,
+    release_version: Optional[str] = None,
+    requires: List[str] = [],
+    unrequires: List[str] = [],
+    compare: bool = True,
+) -> None:
+    if sub_dir:
+        package = sub_dir.name
     else:
-        package = repo.split('/')[1]
-    package_dir = dest_dir / package
-    zipfile = download_from_github(dest_dir, repo, version)
-    unzip(zipfile, package_dir, subdir)
-    if srcdir is not None and (
-            (package_dir / 'msg').exists() or
-            (package_dir / 'srv').exists()):
+        package = repository.split("/")[1]
+    package_dir = build_dir / package
+    zipfile = download_from_github(build_dir, repository, version)
+    unzip(zipfile, package_dir, sub_dir)
+    if src_dir is not None and (
+        (package_dir / "msg").exists() or (package_dir / "srv").exists()
+    ):
         generate_package_from_rosmsg(
-            package_dir, package,
-            None, dest_dir, srcdir)
-    build_package(package_dir)
+            package_dir,
+            package,
+            None,
+            build_dir,
+            src_dir,
+            release_version=release_version,
+        )
+    build_package(
+        package_dir=package_dir,
+        dest_dir=dest_dir,
+        release_version=release_version,
+        requires=requires,
+        unrequires=unrequires,
+        compare=compare,
+    )
 
 
 def build_package_from_github_msg(
-        dest_dir: pathlib.Path,
-        repo: str,
-        version: str,
-        subdir: Optional[pathlib.Path] = None) -> None:
-    if subdir:
-        package = subdir.name
+    build_dir: pathlib.Path,
+    dest_dir: pathlib.Path,
+    repository: str,
+    version: str,
+    sub_dir: Optional[pathlib.Path] = None,
+    release_version: Optional[str] = None,
+    requires: List[str] = [],
+    unrequires: List[str] = [],
+    compare: bool = True,
+) -> None:
+    if sub_dir:
+        package = sub_dir.name
     else:
-        package = repo.split('/')[1]
-    package_dir = dest_dir / package
-    zipfile = download_from_github(dest_dir, repo, version)
-    if subdir is None:
-        subdir = pathlib.Path()
-    unzip(zipfile, package_dir / 'msg', subdir / 'msg')
-    unzip(zipfile, package_dir / 'srv', subdir / 'srv')
-    unzip(zipfile, package_dir / 'action', subdir / 'action')
-    generate_rosmsg_from_action(
-        package_dir / 'msg', package_dir / 'action')
+        package = repository.split("/")[1]
+    package_dir = build_dir / package
+    zipfile = download_from_github(build_dir, repository, version)
+    if sub_dir is None:
+        sub_dir = pathlib.Path()
+    unzip(zipfile, package_dir / "msg", sub_dir / "msg")
+    unzip(zipfile, package_dir / "srv", sub_dir / "srv")
+    unzip(zipfile, package_dir / "action", sub_dir / "action")
+    generate_rosmsg_from_action(package_dir / "msg", package_dir / "action")
     generate_package_from_rosmsg(
-        package_dir, package, version, search_root_dir=dest_dir)
-    build_package(package_dir)
+        package_dir,
+        package,
+        version,
+        search_root_dir=build_dir,
+        release_version=release_version,
+    )
+    build_package(
+        package_dir=package_dir,
+        dest_dir=dest_dir,
+        release_version=release_version,
+        requires=requires,
+        unrequires=unrequires,
+        compare=compare,
+    )
 
 
 def build_package_from_local_package(
-        dest_dir: pathlib.Path,
-        local_dir: pathlib.Path,
-        build_py2: bool = False) -> None:
-    package = local_dir.name
-    package_dir = dest_dir / package
+    build_dir: pathlib.Path,
+    dest_dir: pathlib.Path,
+    src_dir: pathlib.Path,
+    build_py2_binary: bool = False,
+) -> None:
+    package = src_dir.name
+    package_dir = build_dir / package
     shutil.rmtree(package_dir, ignore_errors=True)
-    shutil.copytree(local_dir, package_dir)
-    build_package(package_dir, build_py2)
+    shutil.copytree(src_dir, package_dir)
+    build_package(
+        package_dir=package_dir,
+        dest_dir=dest_dir,
+        build_py2_binary=build_py2_binary,
+    )
 
 
 def generate_package_index(
-        dest_dir: pathlib.Path,
-        source_package_dir: pathlib.Path,
-        generate_html: bool,
-        remote: Optional[git.remote.Remote] = None) -> bool:
-    # https://www.python.org/dev/peps/pep-0503/
-    package = re.sub(r"[-_.]+", "-", source_package_dir.name).lower()
-    dest_package_dir = dest_dir / package
-    dest_package_dir.mkdir(parents=True, exist_ok=True)
+    dest_dir: pathlib.Path,
+    package_name: str,
+    remote: Optional[git.remote.Remote] = None,
+) -> bool:
+    normalized_package_name = normalize(package_name)
+    dest_package_dir = dest_dir / normalized_package_name
     files = {}
-    for f in (source_package_dir / 'dist').glob('*'):
-        print(f.name)
+    for f in dest_package_dir.glob("*.tar.gz"):
         files[f.name] = f.name
-        shutil.copy(f, dest_package_dir)
+    for f in dest_package_dir.glob("*.whl"):
+        files[f.name] = f.name
     if remote is not None:
         url = pathlib.Path(remote.url)
-        raw_url = pathlib.Path(
-            'github.com') / url.parent.name / url.stem / 'raw'
-        for branch in ('Darwin',):
-            if package in remote.refs[branch].commit.tree:
-                for f in remote.refs[branch].commit.tree[package].blobs:
+        raw_url = (
+            pathlib.Path("github.com") / url.parent.name / url.stem / "raw"
+        )
+        for branch in ("Darwin",):
+            if normalized_package_name in remote.refs[branch].commit.tree:
+                for f in (
+                    remote.refs[branch]
+                    .commit.tree[normalized_package_name]
+                    .blobs
+                ):
                     if f.name not in files:
                         print(f.name)
-                        files[f.name] = 'https://' + str(
-                            raw_url / branch / package / f.name)
-    if generate_html:
-        files_list = ''.join([
-            f'<a href="{url}">{f}</a><br>\n'
-            for f, url in files.items()])
-        (dest_package_dir / 'index.html').write_text(
-            f'<!DOCTYPE html><html><body>\n{files_list}</body></html>')
+                        files[f.name] = "https://" + str(
+                            raw_url / branch / normalized_package_name / f.name
+                        )
+    files_list = "".join(
+        [f'<a href="{files[f]}">{f}</a><br>\n' for f in sorted(files.keys())]
+    )
+    (dest_package_dir / "index.html").write_text(
+        f"<!DOCTYPE html><html><body>\n{files_list}</body></html>"
+    )
     return len(files) != 0
 
 
-def generate_index(
-        dest_dir: pathlib.Path,
-        source: pathlib.Path,
-        generate_html: bool,
-        remote: Optional[git.remote.Remote] = None) -> None:
-    dest_dir.mkdir(parents=True, exist_ok=True)
+def generate_index(dest_dir: pathlib.Path,) -> None:
     packages = []
-    for package_dir in source.glob('*'):
+    for package_dir in dest_dir.glob("*"):
         if package_dir.is_dir():
-            found = generate_package_index(
-                dest_dir, package_dir, generate_html, remote)
-            if found:
-                packages.append(package_dir.name)
-    if generate_html:
-        package_list = ''.join([
+            packages.append(package_dir.name)
+    package_list = "".join(
+        [
             f'<a href="{re.sub(r"[-_.]+", "-", p).lower()}/">{p}</a><br>\n'
-            for p in sorted(packages)])
-        (dest_dir / 'index.html').write_text(
-            f'<!DOCTYPE html><html><body>\n{package_list}</body></html>')
+            for p in sorted(packages)
+            if p != ".git"
+        ]
+    )
+    (dest_dir / "index.html").write_text(
+        f"<!DOCTYPE html><html><body>\n{package_list}</body></html>"
+    )
 
 
-def build(dest_dir: pathlib.Path, tmp: pathlib.Path) -> None:
-    tmp.mkdir(parents=True, exist_ok=True)
-    # core rospy packages
-    build_package_from_local_package(tmp, pathlib.Path('rospy-all'))
-    build_package_from_local_package(tmp, pathlib.Path('rospy-builder'))
-    build_package_from_github_package(
-        tmp, 'ros-infrastructure/catkin_pkg', '0.4.13')
-    build_package_from_github_package(
-        tmp, 'ros-infrastructure/rospkg', '1.1.10')
-    build_package_from_github_package(
-        tmp, 'ros/ros', '1.14.6', pathlib.Path('core/roslib'))
-    build_package_from_github_package(
-        tmp, 'ros/genpy', '0.6.8')
-    build_package_from_github_package(
-        tmp, 'ros/genmsg', '0.5.12')
-    build_package_from_github_package(
-            tmp, 'ros/catkin', '0.7.18')
-    ros_comm_version = '5da095d06bccbea708394b399215d8a066797266'
-    build_package_from_github_package(
-        tmp, 'ros/ros_comm', ros_comm_version, pathlib.Path('clients/rospy'))
-    build_package_from_github_package(
-        tmp, 'ros/ros_comm', ros_comm_version, pathlib.Path('tools/rosgraph'))
-    # core ros message packages
-    build_package_from_github_msg(
-        tmp, 'ros/std_msgs', '0.5.12')
-    build_package_from_github_msg(
-        tmp, 'ros/ros_comm', '1.14.3', pathlib.Path('clients/roscpp'))
-    build_package_from_github_msg(
-        tmp, 'ros/ros_comm_msgs', '1.11.2', pathlib.Path('rosgraph_msgs'))
-    build_package_from_github_msg(
-        tmp, 'ros/ros_comm_msgs', '1.11.2', pathlib.Path('std_srvs'))
-    # extra ros packages
-    build_package_from_github_package(
-        tmp, 'ros/actionlib', '1.12.0')
-    build_package_from_github_package(
-        tmp, 'ros/geometry', '1.12.0', pathlib.Path('tf'), pathlib.Path('src'))
-    build_package_from_github_package(
-        tmp, 'ros/geometry', '1.12.0', pathlib.Path('tf_conversions'))
-    build_package_from_github_package(
-        tmp, 'ros/geometry2', '0.6.5', pathlib.Path('tf2_geometry_msgs'))
-    build_package_from_github_package(
-        tmp, 'ros-perception/vision_opencv', '1.13.0',
-        pathlib.Path('image_geometry'))
-    build_package_from_github_package(
-        tmp, 'eric-wieser/ros_numpy', '0.0.2')
-    build_package_from_github_package(
-        tmp, 'ros/ros_comm', ros_comm_version,
-        pathlib.Path('tools/rosservice'))
-    build_package_from_github_package(
-        tmp, 'ros/ros_comm', ros_comm_version, pathlib.Path('tools/rosmsg'))
-    build_package_from_github_package(
-        tmp, 'ros/ros_comm', ros_comm_version, pathlib.Path('tools/rosbag'))
-    build_package_from_github_package(
-        tmp, 'ros/ros_comm', ros_comm_version, pathlib.Path('tools/rosmaster'))
-    build_package_from_github_package(
-        tmp, 'ros/ros_comm', ros_comm_version,
-        pathlib.Path('tools/rostest'))
-    build_package_from_github_package(
-        tmp, 'ros/ros_comm', ros_comm_version,
-        pathlib.Path('tools/roslaunch'))
-    build_package_from_github_package(
-        tmp, 'ros/ros_comm', ros_comm_version,
-        pathlib.Path('utilities/message_filters'))
-    build_package_from_github_package(
-        tmp, 'ros/ros', '1.14.7',
-        pathlib.Path('tools/rosunit'))
-    build_package_from_github_package(
-        tmp, 'ros/ros', '1.14.7',
-        pathlib.Path('tools/rosclean'))
-    # dynamic_reconfigure
-    build_package_from_github_package(
-        tmp, 'ros/dynamic_reconfigure', '1.6.0', None, 'src')
-    # build_package_from_github_package(
-    #     tmp, 'ros/geometry2', '0.6.5', pathlib.Path('tf2_ros'))
-    build_package_from_local_package(tmp, pathlib.Path('tf2_py'), True)
-    build_package_from_local_package(
-        tmp, pathlib.Path('tf2_py/geometry2/tf2_ros'))
-    # PyKDL cannot support Python2 because sip does not support python2
-    build_package_from_local_package(tmp, pathlib.Path('PyKDL'), False)
-    # cv_bridge
-    build_package_from_local_package(tmp, pathlib.Path('cv_bridge'), True)
-    # roslz4
-    build_package_from_local_package(tmp, pathlib.Path('roslz4'), True)
-    # extra ros messages
-    common_msgs = [
-        'geometry_msgs',
-        'sensor_msgs',
-        'actionlib_msgs',
-        'shape_msgs',
-        'diagnostic_msgs',
-        'nav_msgs',
-        'stereo_msgs',
-        'trajectory_msgs',
-        'visualization_msgs',
-    ]
-    for msg in common_msgs:
-        build_package_from_github_msg(
-            tmp, 'ros/common_msgs', '1.12.7', pathlib.Path(msg))
-    build_package_from_github_msg(
-        tmp, 'ros/geometry2', '0.6.5', pathlib.Path('tf2_msgs'))
-    build_package_from_github_msg(
-        tmp, 'ros-controls/control_msgs', '1.5.0',
-        pathlib.Path('control_msgs'))
-    build_package_from_github_msg(
-        tmp, 'ros-planning/navigation_msgs', '1.13.0',
-        pathlib.Path('map_msgs'))
-    build_package_from_github_msg(
-        tmp, 'ros-planning/navigation_msgs', '1.13.0',
-        pathlib.Path('move_base_msgs'))
-    build_package_from_github_msg(
-        tmp, 'ros-simulation/gazebo_ros_pkgs', '2.5.19',
-        pathlib.Path('gazebo_msgs'))
+@dataclass
+class PackageInfo:
+    name: str
+    path: Optional[str] = None
+    repository: Optional[str] = None
+    version: Optional[str] = None
+    build_py2_binary: Optional[bool] = False
+    release_version: Optional[str] = None
+    type: Optional[str] = None
+    src: Optional[str] = None
+    requires: Optional[List[str]] = field(default_factory=list)
+    unrequires: Optional[List[str]] = field(default_factory=list)
+    skip_compare: Optional[bool] = False
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        '-a', '--all', action='store_true',
-        help='build all packages')
-    parser.add_argument(
-        '-d', '--dest', default='index',
-        help='destination directory of artifacts')
-    parser.add_argument(
-        '-n', '--no-index', action='store_true',
-        help='do not generate index files')
-    parser.add_argument(
-        '-k', '--keep', action='store_true',
-        help='keep build files to /tmp/build')
-    parser.add_argument(
-        '-i', '--include', action='store_true',
-        help='find and include remote branch artifacts')
-    parser.add_argument(
-        '-s', '--skip-build', action='store_true',
-        help='skip build')
-    parser.add_argument(
-        '-g', '--generate-msg', type=str, default=None,
-        help='generate msg package')
-    parser.add_argument(
-        '-r', '--search-root', type=str, default=os.getcwd(),
-        help='message search path')
-    args = parser.parse_args()
-    if args.generate_msg is not None:
-        package_dir = pathlib.Path(args.generate_msg)
-        generate_rosmsg_from_action(
-            package_dir / 'msg', package_dir / 'action')
-        generate_package_from_rosmsg(
-            package_dir,
-            package_dir.name,
-            None,
-            pathlib.Path(args.search_root))
-        sys.exit(0)
-    if not args.all:
-        parser.print_help()
-        sys.exit(0)
+@click.group(invoke_without_command=True)
+@click.pass_context
+def cli(ctx, package_list: str = None) -> None:
+    if ctx.invoked_subcommand is None:
+        print(ctx.get_help())
+
+
+@cli.command(help="build packages")
+@click.option(
+    "-l",
+    "--list",
+    "package_list",
+    type=click.Path(exists=True),
+    help="path to packages.yaml",
+    default=os.getcwd() + "/packages.yaml",
+)
+@click.option(
+    "-i",
+    "--index",
+    "index_dir",
+    type=click.Path(),
+    help="path where generate index",
+    default=os.getcwd() + "/index",
+)
+@click.option(
+    "--no-index",
+    type=bool,
+    help="do not generate index",
+    default=False,
+    is_flag=True,
+)
+@click.argument("target", required=False, type=str)
+def build(
+    target: Optional[str], package_list: str, index_dir: str, no_index: bool,
+) -> None:
+    index_dir_path = pathlib.Path(index_dir)
+    with open(package_list) as f:
+        packages_dict = yaml.safe_load(f)
+    packages: List[PackageInfo] = []
+    for package in packages_dict:
+        packages.append(PackageInfo(**package))
+    if target is not None:
+        if target not in [p.name for p in packages]:
+            print(f"{target} is not find in {package_list}")
+            sys.exit(1)
+    tmp = pathlib.Path(tempfile.mkdtemp())
     origin = None
-    if args.include:
-        try:
-            repo = git.Repo()
-            origin = repo.remotes.origin
-            origin.fetch()
-        except git.exc.InvalidGitRepositoryError:
-            print('Not a git directory. Ignore include flag')
-    if args.keep:
-        tmp = pathlib.Path(tempfile.gettempdir()) / 'build'
-    else:
-        tmp = pathlib.Path(tempfile.mkdtemp())
-    dest_dir = pathlib.Path(args.dest)
     try:
-        if not args.skip_build:
-            build(dest_dir, tmp)
-        generate_index(dest_dir, tmp, not args.no_index, origin)
+        repo = git.Repo()
+        origin = repo.remotes.origin
+        origin.fetch()
+    except git.exc.InvalidGitRepositoryError:
+        print("Not a git directory. Will not include other arch binaries")
+    try:
+        for package in packages:
+            if target is not None and target != package.name:
+                continue
+            print(package.name)
+            if package.repository is None:
+                build_package_from_local_package(
+                    build_dir=tmp,
+                    dest_dir=index_dir_path,
+                    src_dir=pathlib.Path(package.path),
+                    build_py2_binary=package.build_py2_binary,
+                )
+            elif package.version is not None:
+                path = (
+                    pathlib.Path(package.path)
+                    if package.path is not None
+                    else None
+                )
+                src = (
+                    pathlib.Path(package.src)
+                    if package.src is not None
+                    else None
+                )
+                if package.type is None:
+                    build_package_from_github_package(
+                        build_dir=tmp,
+                        dest_dir=index_dir_path,
+                        repository=package.repository,
+                        version=package.version,
+                        sub_dir=path,
+                        src_dir=src,
+                        release_version=package.release_version,
+                        requires=package.requires,
+                        unrequires=package.unrequires,
+                        compare=not package.skip_compare,
+                    )
+                else:
+                    build_package_from_github_msg(
+                        build_dir=tmp,
+                        dest_dir=index_dir_path,
+                        repository=package.repository,
+                        version=package.version,
+                        sub_dir=path,
+                        release_version=package.release_version,
+                        requires=package.requires,
+                        unrequires=package.unrequires,
+                        compare=not package.skip_compare,
+                    )
+            if not no_index:
+                generate_package_index(index_dir_path, package.name, origin)
+        if not no_index:
+            generate_index(index_dir_path)
     finally:
-        if not args.keep:
-            shutil.rmtree(tmp)
+        shutil.rmtree(tmp)
 
 
-if __name__ == '__main__':
-    main()
+@cli.command(help="generate message package")
+@click.option(
+    "-s",
+    "--seach",
+    "search_dir",
+    type=click.Path(exists=True),
+    help="path to packages.yaml",
+)
+@click.argument("path", type=click.Path(exists=True), required=True)
+def genmsg(path: str, search_dir: str) -> None:
+    package_dir = pathlib.Path(path)
+    search_dir = pathlib.Path(search_dir) if search_dir is not None else None
+    generate_rosmsg_from_action(package_dir / "msg", package_dir / "action")
+    generate_package_from_rosmsg(
+        package_dir, package_dir.name, None, search_dir
+    )
+
+
+if __name__ == "__main__":
+    cli()
