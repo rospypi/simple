@@ -13,7 +13,7 @@ So you can run ``rospy`` without ``catkin`` and Python2.
 ```bash
 virtualenv -p python3 venv
 . ./venv/bin/activate
-pip install --extra-index-url https://rospypi.github.io/simple/ rospy-all
+pip install --extra-index-url https://rospypi.github.io/simple/ rospy
 pip install --extra-index-url https://rospypi.github.io/simple/ tf2_ros
 ```
 
@@ -54,7 +54,7 @@ docker run --rm -p 8000:8000 localpypi
 ```bash
 virtualenv -p python3 venv
 . ./venv/bin/activate
-pip install --extra-index-url http://localhost:8000/index/ rospy-all
+pip install --extra-index-url http://localhost:8000/index/ rospy
 ```
 
 
@@ -66,14 +66,14 @@ pip install --extra-index-url http://localhost:8000/index/ rospy-all
 virtualenv -p python3 dev
 . ./dev/bin/activate
 pip install --extra-index-url https://rospypi.github.io/simple/ -e rospy-builder/
-rospy-build -a
+rospy-build build
 python -m http.server
 ```
 
 ```bash
 virtualenv -p python3 venv
 . ./venv/bin/activate
-pip install --extra-index-url http://localhost:8000/index/ rospy-all
+pip install --extra-index-url http://localhost:8000/index/ rospy
 ```
 
 ## Generate Message Python Package
@@ -88,6 +88,6 @@ mkdir msgs
 (cd msgs; git clone https://github.com/ros/std_msgs.git)
 (cd msgs; git clone https://github.com/ros/common_msgs.git)
 # (cd msgs; any repository that is depended on your message)
-rospy-build -g your_package_path -r msgs/
+rospy-build genmsg your_package_path -s msgs/
 # ex.rospy-build -g ros_tutorials/rospy_tutorials/ -r msgs/
 ```
