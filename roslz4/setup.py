@@ -6,7 +6,7 @@ include_dirs = [
 setup(
     name='roslz4',
     packages=['roslz4'],
-    version='1.14.3',
+    version='1.14.3.post0',
     package_dir={'': 'ros_comm/utilities/roslz4/src'},
     install_requires=[],
     ext_package='roslz4',
@@ -18,7 +18,7 @@ setup(
             'ros_comm/utilities/roslz4/src/xxhash.c',
         ],
         include_dirs=[
-            'ros_comm/utilities/roslz4/include',
+            'include',
             'roscpp_core/cpp_common/include',
         ],
         extra_compile_args=[
@@ -29,9 +29,6 @@ setup(
         ],
         define_macros=[
             ('XXH_NAMESPACE', 'ROSLZ4_'),
-        ],
-        extra_link_args=[
-            '-Wl,--allow-multiple-definition'
         ],
         libraries=['lz4']
     )],
