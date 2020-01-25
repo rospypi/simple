@@ -1,4 +1,5 @@
 recursive-include ros_comm/utilities/roslz4/include *
 recursive-include ros_comm/utilities/roslz4/src *.h
 recursive-include roscpp_core/cpp_common/include *
+recursive-include include *
 
