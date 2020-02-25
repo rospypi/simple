@@ -577,7 +577,7 @@ def build(
     "--seach",
     "search_dir",
     type=click.Path(exists=True),
-    help="path to packages.yaml",
+    help="message search root path",
 )
 @click.argument("path", type=click.Path(exists=True), required=True)
 def genmsg(path: str, search_dir: str) -> None:
