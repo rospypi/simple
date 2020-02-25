@@ -89,5 +89,5 @@ mkdir msgs
 (cd msgs; git clone https://github.com/ros/common_msgs.git)
 # (cd msgs; any repository that is depended on your message)
 rospy-build genmsg your_package_path -s msgs/
-# ex.rospy-build -g ros_tutorials/rospy_tutorials/ -r msgs/
+# ex.rospy-build genmsg ros_tutorials/rospy_tutorials/ -s msgs/
 ```
