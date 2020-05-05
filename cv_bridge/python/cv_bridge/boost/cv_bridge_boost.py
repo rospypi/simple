@@ -49,7 +49,7 @@ _CV_TYPES = {
     "bayer_grbg16": cv2.CV_16UC1,
     }
 
-_CV_CONVERSTIONS = {
+_CV_CONVERSIONS = {
     ("mono8", "rgb8"): cv2.COLOR_GRAY2RGB,
     ("mono8", "bgr8"): cv2.COLOR_GRAY2BGR,
     ("mono8", "rgba8"): cv2.COLOR_GRAY2RGBA,
@@ -116,6 +116,6 @@ def CV_MAT_DEPTHWrap(flags):
 
 
 def cvtColor2(img, encoding_in, encoding_out):
-    conversion = _CV_CONVERSTIONS[(encoding_in, encoding_out)]
+    conversion = _CV_CONVERSIONS[(encoding_in, encoding_out)]
     # depth conversion is not yet implemented
     return cv2.cvtColor(img, conversion)
