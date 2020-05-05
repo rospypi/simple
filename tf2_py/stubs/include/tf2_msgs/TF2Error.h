@@ -1,5 +1,10 @@
 #pragma once
 
+// for winerror.h
+#ifdef NO_ERROR
+#undef NO_ERROR
+#endif
+
 namespace tf2_msgs {
 
 struct TF2Error {
