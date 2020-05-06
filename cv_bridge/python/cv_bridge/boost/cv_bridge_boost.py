@@ -104,7 +104,7 @@ def getCvType(encoding):
 
 
 def cvtColorForDisplay():
-    raise NotImplemented("cvtColorForDisplay is not implemented yet")
+    raise NotImplementedError("cvtColorForDisplay is not implemented yet")
 
 
 def CV_MAT_CNWrap(flags):
