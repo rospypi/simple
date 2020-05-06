@@ -40,31 +40,28 @@
 # ros/ros_comm
 - name: rospy
   repository: ros/ros_comm
-  version: 5da095d06bccbea708394b399215d8a066797266
+  version: 1.15.4
   path: clients/rospy
-  release_version: 1.14.3.post0
   requires:
     - roscpp
     - rosgraph_msgs
     - std_msgs
 - name: rosgraph
   repository: ros/ros_comm
-  version: 5da095d06bccbea708394b399215d8a066797266
+  version: 1.15.4
   path: tools/rosgraph
 - name: rosservice
   repository: ros/ros_comm
-  version: 5da095d06bccbea708394b399215d8a066797266
+  version: 1.15.4
   path: tools/rosservice
-  release_version: 1.14.3.post0
 - name: rosmsg
   repository: ros/ros_comm
-  version: 5da095d06bccbea708394b399215d8a066797266
+  version: 1.15.4
   path: tools/rosmsg
 - name: rosbag
   repository: ros/ros_comm
-  version: 5da095d06bccbea708394b399215d8a066797266
+  version: 1.15.4
   path: tools/rosbag
-  release_version: 1.14.3.post0
   requires:
     - "genpy<2000"
     - gnupg
@@ -73,27 +70,23 @@
     - rospy
 - name: rosmaster
   repository: ros/ros_comm
-  version: 5da095d06bccbea708394b399215d8a066797266
+  version: 1.15.4
   path: tools/rosmaster
-  release_version: 1.14.3.post0
   requires:
     - defusedxml
     - rosgraph
 - name: rostest
   repository: ros/ros_comm
-  version: 5da095d06bccbea708394b399215d8a066797266
+  version: 1.15.4
   path: tools/rostest
-  release_version: 1.14.3.post0
 - name: roslaunch
   repository: ros/ros_comm
-  version: 5da095d06bccbea708394b399215d8a066797266
+  version: 1.15.4
   path: tools/roslaunch
-  release_version: 1.14.3.post0
 - name: message_filters
   repository: ros/ros_comm
-  version: 5da095d06bccbea708394b399215d8a066797266
+  version: 1.15.4
   path: utilities/message_filters
-  release_version: 1.14.3.post0
 # tf
 - name: tf_conversions
   repository: ros/geometry
@@ -141,7 +134,6 @@
   repository: ros/ros_comm
   version: 1.14.3
   path: clients/roscpp
-  release_version: 1.14.3.post0  # genpy==0.6.9.post0
 - name: std_srvs
   type: msg
   repository: ros/ros_comm_msgs
