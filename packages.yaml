@@ -1,15 +1,15 @@
 # local
-- name: roslz4
-  path: roslz4
 - name: PyKDL
   path: PyKDL
   build_py2_binary: False
+- name: roslz4
+  path: roslz4
 - name: cv_bridge
   path: cv_bridge
-- name: tf2_py
-  path: tf2_py
 - name: tf2_ros
   path: tf2_py/geometry2/tf2_ros
+- name: tf2_py
+  path: tf2_py
 - name: rospy-all
   path: rospy-all
 - name: rospy-builder

@@ -4,6 +4,7 @@ import os
 import pathlib
 import re
 import shutil
+import stat
 import subprocess
 import sys
 import tarfile
@@ -174,7 +175,7 @@ def build_package(
                     print(f"content is not changed: {tar_file.name}")
             return
         print("copy")
-        shutil.copy(tar_file, dest_package_dir)
+        shutil.copy(tar_file, cwd / dest_package_dir)
         # if it's updated build the binary package
         sys.argv = ["", "bdist_wheel", "--universal"]
         exec(setup_code, globals())
@@ -182,7 +183,7 @@ def build_package(
             # TODO: find a better way
             subprocess.call(["python2", "setup.py", "bdist_wheel"])
         for wheel in (package_dir / "dist").glob("*.whl"):
-            shutil.copy(wheel, dest_package_dir)
+            shutil.copy(wheel, cwd / dest_package_dir)
     finally:
         sys.argv = original_argv
         os.chdir(cwd)
@@ -384,7 +385,25 @@ def build_package_from_local_package(
     package = src_dir.name
     package_dir = build_dir / package
     shutil.rmtree(package_dir, ignore_errors=True)
-    shutil.copytree(src_dir, package_dir)
+    # shutil.copytree(src_dir, package_dir, copy_function=shutil.copy)
+
+    def copytree(src, dst):
+        # windows git symlink support
+        os.makedirs(dst)
+        files = os.listdir(src)
+        for f in files:
+            srcfull = os.path.join(src, f)
+            dstfull = os.path.join(dst, f)
+            m = os.lstat(srcfull).st_mode
+            if stat.S_ISLNK(m):
+                srcfull = os.path.join(src, os.readlink(srcfull))
+                m = os.lstat(srcfull).st_mode
+            if stat.S_ISDIR(m):
+                copytree(srcfull, dstfull)
+            else:
+                shutil.copy(srcfull, dstfull)
+
+    copytree(src_dir, package_dir)
     build_package(
         package_dir=package_dir,
         dest_dir=dest_dir,
@@ -493,9 +512,20 @@ def cli(ctx, package_list: str = None) -> None:
     default=False,
     is_flag=True,
 )
+@click.option(
+    "--local",
+    type=bool,
+    help="build only local packages",
+    default=False,
+    is_flag=True,
+)
 @click.argument("target", required=False, type=str)
 def build(
-    target: Optional[str], package_list: str, index_dir: str, no_index: bool,
+    target: Optional[str],
+    package_list: str,
+    index_dir: str,
+    no_index: bool,
+    local: bool,
 ) -> None:
     index_dir_path = pathlib.Path(index_dir)
     with open(package_list) as f:
@@ -518,6 +548,8 @@ def build(
     try:
         for package in packages:
             if target is not None and target != package.name:
+                continue
+            if local and package.repository is not None:
                 continue
             print(package.name)
             if package.repository is None:
