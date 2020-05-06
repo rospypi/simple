@@ -116,6 +116,9 @@ def CV_MAT_DEPTHWrap(flags):
 
 
 def cvtColor2(img, encoding_in, encoding_out):
+    if encoding_in == encoding_out:
+        return img
+
     conversion = _CV_CONVERSTIONS[(encoding_in, encoding_out)]
     # depth conversion is not yet implemented
     return cv2.cvtColor(img, conversion)
