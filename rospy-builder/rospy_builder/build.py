@@ -411,61 +411,6 @@ def build_package_from_local_package(
     )
 
 
-def generate_package_index(
-    dest_dir: pathlib.Path,
-    package_name: str,
-    remote: Optional[git.remote.Remote] = None,
-) -> bool:
-    normalized_package_name = normalize(package_name)
-    dest_package_dir = dest_dir / normalized_package_name
-    files = {}
-    for f in dest_package_dir.glob("*.tar.gz"):
-        files[f.name] = f.name
-    for f in dest_package_dir.glob("*.whl"):
-        files[f.name] = f.name
-    if remote is not None:
-        url = pathlib.Path(remote.url)
-        raw_url = (
-            pathlib.Path("github.com") / url.parent.name / url.stem / "raw"
-        )
-        for branch in ("Darwin",):
-            if normalized_package_name in remote.refs[branch].commit.tree:
-                for f in (
-                    remote.refs[branch]
-                    .commit.tree[normalized_package_name]
-                    .blobs
-                ):
-                    if f.name not in files:
-                        print(f.name)
-                        files[f.name] = "https://" + str(
-                            raw_url / branch / normalized_package_name / f.name
-                        )
-    files_list = "".join(
-        [f'<a href="{files[f]}">{f}</a><br>\n' for f in sorted(files.keys())]
-    )
-    (dest_package_dir / "index.html").write_text(
-        f"<!DOCTYPE html><html><body>\n{files_list}</body></html>"
-    )
-    return len(files) != 0
-
-
-def generate_index(dest_dir: pathlib.Path,) -> None:
-    packages = []
-    for package_dir in dest_dir.glob("*"):
-        if package_dir.is_dir():
-            packages.append(package_dir.name)
-    package_list = "".join(
-        [
-            f'<a href="{re.sub(r"[-_.]+", "-", p).lower()}/">{p}</a><br>\n'
-            for p in sorted(packages)
-            if p != ".git"
-        ]
-    )
-    (dest_dir / "index.html").write_text(
-        f"<!DOCTYPE html><html><body>\n{package_list}</body></html>"
-    )
-
-
 @dataclass
 class PackageInfo:
     name: str
@@ -506,13 +451,6 @@ def cli(ctx, package_list: str = None) -> None:
     default=os.getcwd() + "/index",
 )
 @click.option(
-    "--no-index",
-    type=bool,
-    help="do not generate index",
-    default=False,
-    is_flag=True,
-)
-@click.option(
     "--local",
     type=bool,
     help="build only local packages",
@@ -524,7 +462,6 @@ def build(
     target: Optional[str],
     package_list: str,
     index_dir: str,
-    no_index: bool,
     local: bool,
 ) -> None:
     index_dir_path = pathlib.Path(index_dir)
@@ -595,10 +532,6 @@ def build(
                         unrequires=package.unrequires,
                         compare=not package.skip_compare,
                     )
-            if not no_index:
-                generate_package_index(index_dir_path, package.name, origin)
-        if not no_index:
-            generate_index(index_dir_path)
     finally:
         shutil.rmtree(tmp)
 
@@ -618,6 +551,47 @@ def genmsg(path: str, search_dir: str) -> None:
     generate_rosmsg_from_action(package_dir / "msg", package_dir / "action")
     generate_package_from_rosmsg(
         package_dir, package_dir.name, None, search_dir
+    )
+
+
+@cli.command(help="generate index html")
+@click.argument("path", type=click.Path(exists=True), required=True)
+def index(path: str) -> None:
+    repo = git.Repo()
+    origin = repo.remotes.origin
+    origin.fetch()
+    packages = {}
+    for t in origin.refs["any"].commit.tree.trees:
+        packages[t.name] = []
+        for b in t.blobs:
+            packages[t.name].append(("any", b.name))
+    for platform in ("Linux", "Darwin", "Windows"):
+        for version in ("3.6", "3.7", "3.8"):
+            branch_name = platform + "_" + version
+            if branch_name in origin.refs:
+                for t in origin.refs[branch_name].commit.tree.trees:
+                    for b in t.blobs:
+                        packages[t.name].append((branch_name, b.name))
+    url = pathlib.Path(origin.url)
+    raw_url = pathlib.Path("github.com") / url.parent.name / url.stem / "raw"
+    for package_name, files in packages.items():
+        files_list = "".join(
+            [
+                f'<a href="{fname}">https://{raw_url}/{branch}/{package_name}/{fname}</a><br>\n'  # NOQA
+                for branch, fname in sorted(files)
+            ]
+        )
+        parent = pathlib.Path(path) / package_name
+        if not parent.exists():
+            parent.mkdir(parents=True)
+        (parent / "index.html").write_text(
+            f"<!DOCTYPE html><html><body>\n{files_list}</body></html>"
+        )
+    package_list = "".join(
+        [f'<a href="{p}/">{p}</a><br>\n' for p in sorted(packages.keys())]
+    )
+    (pathlib.Path(path) / "index.html").write_text(
+        f"<!DOCTYPE html><html><body>\n{package_list}</body></html>"
     )
 
 
