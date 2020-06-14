@@ -28,7 +28,7 @@ else:
 setup(
     name="roslz4",
     packages=["roslz4"],
-    version="1.14.3.post0",
+    version="1.14.3.post1",
     package_dir={"": "ros_comm/utilities/roslz4/src"},
     install_requires=[],
     ext_package="roslz4",

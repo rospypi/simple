@@ -29,7 +29,7 @@ if platform.system() == "Windows":
 setup(
     name="tf2_py",
     packages=["tf2_py"],
-    version="0.6.5",
+    version="0.6.5.post0",
     package_dir={"": "geometry2/tf2_py/src"},
     install_requires=["rospy", "geometry_msgs", "tf2_msgs"],
     ext_package="tf2_py",
