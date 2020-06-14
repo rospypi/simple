@@ -16,7 +16,7 @@ if sys.version_info < (3, 7):
 
 setup(
     name="rospy-builder",
-    version="0.2.0",
+    version="0.3.0",
     description="rospy package build tool",
     author="Tamamki Nishino",
     author_email="otamachan@gmail.com",

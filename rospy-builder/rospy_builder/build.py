@@ -26,16 +26,15 @@ def normalize(name: str) -> str:
 
 def tarsum(file_name: pathlib.Path) -> str:
     tar = tarfile.open(mode="r|*", fileobj=file_name.open("rb"))
-    chunk_size = 512 * 1024
     h = hashlib.sha256()
+    contents = {}
     for member in tar:
         if not member.isfile():
             continue
         f = tar.extractfile(member)
-        data = f.read(chunk_size)
-        while data:
-            h.update(data)
-            data = f.read(chunk_size)
+        contents[member.name] = f.read()
+    for f in sorted(contents.keys()):
+        h.update(contents[f])
     return h.hexdigest()
 
 
@@ -87,7 +86,8 @@ def unzip(
 def build_package(
     package_dir: pathlib.Path,
     dest_dir: pathlib.Path,
-    build_py2_binary: bool = False,
+    only_binary: bool = False,
+    native_build: Optional[str] = None,
     release_version: Optional[str] = None,
     requires: List[str] = [],
     unrequires: List[str] = [],
@@ -147,43 +147,48 @@ def build_package(
     try:
         cwd = os.getcwd()
         original_argv = sys.argv
-        dest_package_dir = dest_dir / normalize(package_dir.name)
+        package_name = normalize(package_dir.name)
+        dest_package_dir = (dest_dir / package_name).resolve()
         dest_package_dir.mkdir(parents=True, exist_ok=True)
         os.chdir(package_dir)
         # build source package
-        sys.argv = ["", "sdist"]
-        exec(setup_code, globals())
-        # check before copy
-        tar_file = next((package_dir / "dist").glob("*.tar.gz"))
-        if (dest_package_dir / tar_file.name).exists():
-            print(dest_package_dir / tar_file.name)
-            if compare:
-                digest0 = tarsum(tar_file)
-                digest1 = tarsum(dest_package_dir / tar_file.name)
-                if digest0 != digest1:
-                    print(
-                        "Hash is same! Remove or change the version."
-                        f"{tar_file.name}"
-                    )
-                    shutil.copy(tar_file, cwd + "/" + tar_file.name + ".new")
-                    shutil.copy(
-                        dest_package_dir / tar_file.name,
-                        cwd + "/" + tar_file.name + ".org",
-                    )
-                    sys.exit(1)
-                else:
-                    print(f"content is not changed: {tar_file.name}")
-            return
-        print("copy")
-        shutil.copy(tar_file, cwd / dest_package_dir)
-        # if it's updated build the binary package
-        sys.argv = ["", "bdist_wheel", "--universal"]
-        exec(setup_code, globals())
-        if build_py2_binary:
-            # TODO: find a better way
-            subprocess.call(["python2", "setup.py", "bdist_wheel"])
-        for wheel in (package_dir / "dist").glob("*.whl"):
-            shutil.copy(wheel, cwd / dest_package_dir)
+        if not only_binary:
+            sys.argv = ["", "sdist"]
+            exec(setup_code, globals())
+            # check before copy
+            tar_file = next((package_dir / "dist").glob("*.tar.gz"))
+            if (dest_package_dir / tar_file.name).exists():
+                if compare:
+                    digest0 = tarsum(tar_file)
+                    digest1 = tarsum(dest_package_dir / tar_file.name)
+                    if digest0 != digest1:
+                        print(
+                            "Hash is not same! Remove or change the version."
+                            f"{tar_file.name}"
+                        )
+                        shutil.copy(
+                            tar_file, cwd + "/" + tar_file.name + ".new"
+                        )
+                        shutil.copy(
+                            dest_package_dir / tar_file.name,
+                            cwd + "/" + tar_file.name + ".org",
+                        )
+                        sys.exit(1)
+                    else:
+                        print(f"content is not changed: {tar_file.name}")
+                return
+            print("copy")
+            shutil.copy(tar_file, dest_package_dir)
+        if (not only_binary and native_build is None) or \
+           (only_binary and native_build is not None):
+            # if it's updated build the binary package
+            sys.argv = ["", "bdist_wheel", "--universal"]
+            exec(setup_code, globals())
+            if native_build == "all":
+                # TODO: find a better way
+                subprocess.call(["python2", "setup.py", "bdist_wheel"])
+            for wheel in (package_dir / "dist").glob("*.whl"):
+                shutil.copy(wheel, dest_package_dir)
     finally:
         sys.argv = original_argv
         os.chdir(cwd)
@@ -380,7 +385,8 @@ def build_package_from_local_package(
     build_dir: pathlib.Path,
     dest_dir: pathlib.Path,
     src_dir: pathlib.Path,
-    build_py2_binary: bool = False,
+    only_binary: bool,
+    native_build: Optional[str] = None,
 ) -> None:
     package = src_dir.name
     package_dir = build_dir / package
@@ -407,7 +413,8 @@ def build_package_from_local_package(
     build_package(
         package_dir=package_dir,
         dest_dir=dest_dir,
-        build_py2_binary=build_py2_binary,
+        only_binary=only_binary,
+        native_build=native_build,
     )
 
 
@@ -417,7 +424,7 @@ class PackageInfo:
     path: Optional[str] = None
     repository: Optional[str] = None
     version: Optional[str] = None
-    build_py2_binary: Optional[bool] = False
+    native_build: Optional[str] = None
     release_version: Optional[str] = None
     type: Optional[str] = None
     src: Optional[str] = None
@@ -443,28 +450,24 @@ def cli(ctx, package_list: str = None) -> None:
     default=os.getcwd() + "/packages.yaml",
 )
 @click.option(
-    "-i",
-    "--index",
-    "index_dir",
+    "-d",
+    "--dest",
+    "dest_dir",
     type=click.Path(),
-    help="path where generate index",
-    default=os.getcwd() + "/index",
+    help="path where to generate packages",
+    default=os.getcwd() + "/dest",
 )
 @click.option(
-    "--local",
-    type=bool,
-    help="build only local packages",
-    default=False,
+    "--native",
     is_flag=True,
+    help="build only platform specific binaries",
+    default=False,
 )
 @click.argument("target", required=False, type=str)
 def build(
-    target: Optional[str],
-    package_list: str,
-    index_dir: str,
-    local: bool,
+    target: Optional[str], package_list: str, dest_dir: str, native: bool,
 ) -> None:
-    index_dir_path = pathlib.Path(index_dir)
+    dest_dir_path = pathlib.Path(dest_dir)
     with open(package_list) as f:
         packages_dict = yaml.safe_load(f)
     packages: List[PackageInfo] = []
@@ -486,15 +489,16 @@ def build(
         for package in packages:
             if target is not None and target != package.name:
                 continue
-            if local and package.repository is not None:
+            if native and package.native_build is None:
                 continue
             print(package.name)
             if package.repository is None:
                 build_package_from_local_package(
                     build_dir=tmp,
-                    dest_dir=index_dir_path,
+                    dest_dir=dest_dir_path,
                     src_dir=pathlib.Path(package.path),
-                    build_py2_binary=package.build_py2_binary,
+                    only_binary=native,
+                    native_build=package.native_build,
                 )
             elif package.version is not None:
                 path = (
@@ -510,7 +514,7 @@ def build(
                 if package.type is None:
                     build_package_from_github_package(
                         build_dir=tmp,
-                        dest_dir=index_dir_path,
+                        dest_dir=dest_dir_path,
                         repository=package.repository,
                         version=package.version,
                         sub_dir=path,
@@ -523,7 +527,7 @@ def build(
                 else:
                     build_package_from_github_msg(
                         build_dir=tmp,
-                        dest_dir=index_dir_path,
+                        dest_dir=dest_dir_path,
                         repository=package.repository,
                         version=package.version,
                         sub_dir=path,
@@ -582,8 +586,7 @@ def index(path: str) -> None:
             ]
         )
         parent = pathlib.Path(path) / package_name
-        if not parent.exists():
-            parent.mkdir(parents=True)
+        parent.mkdir(parents=True, exist_ok=True)
         (parent / "index.html").write_text(
             f"<!DOCTYPE html><html><body>\n{files_list}</body></html>"
         )
