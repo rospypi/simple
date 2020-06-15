@@ -581,12 +581,14 @@ def index(path: str) -> None:
     for package_name, files in packages.items():
         files_list = "".join(
             [
-                f'<a href="{fname}">https://{raw_url}/{branch}/{package_name}/{fname}</a><br>\n'  # NOQA
+                f'<a href="https://{raw_url}/{branch}/{package_name}/{fname}">{fname}</a><br>\n'  # NOQA
                 for branch, fname in sorted(files)
             ]
         )
         parent = pathlib.Path(path) / package_name
         parent.mkdir(parents=True, exist_ok=True)
+        print(package_name)
+        print(files_list)
         (parent / "index.html").write_text(
             f"<!DOCTYPE html><html><body>\n{files_list}</body></html>"
         )
