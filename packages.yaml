@@ -1,15 +1,17 @@
 # local
 - name: PyKDL
   path: PyKDL
-  build_py2_binary: False
+  native_build: py3
 - name: roslz4
   path: roslz4
+  native_build: py3
 - name: cv_bridge
   path: cv_bridge
 - name: tf2_ros
   path: tf2_py/geometry2/tf2_ros
 - name: tf2_py
   path: tf2_py
+  native_build: py3
 - name: rospy-all
   path: rospy-all
 - name: rospy-builder
@@ -40,31 +42,28 @@
 # ros/ros_comm
 - name: rospy
   repository: ros/ros_comm
-  version: 5da095d06bccbea708394b399215d8a066797266
+  version: 1.15.7
   path: clients/rospy
-  release_version: 1.14.3.post0
   requires:
     - roscpp
     - rosgraph_msgs
     - std_msgs
 - name: rosgraph
   repository: ros/ros_comm
-  version: 5da095d06bccbea708394b399215d8a066797266
+  version: 1.15.7
   path: tools/rosgraph
 - name: rosservice
   repository: ros/ros_comm
-  version: 5da095d06bccbea708394b399215d8a066797266
+  version: 1.15.7
   path: tools/rosservice
-  release_version: 1.14.3.post0
 - name: rosmsg
   repository: ros/ros_comm
-  version: 5da095d06bccbea708394b399215d8a066797266
+  version: 1.15.7
   path: tools/rosmsg
 - name: rosbag
   repository: ros/ros_comm
-  version: 5da095d06bccbea708394b399215d8a066797266
+  version: 1.15.7
   path: tools/rosbag
-  release_version: 1.14.3.post0
   requires:
     - "genpy<2000"
     - gnupg
@@ -73,27 +72,23 @@
     - rospy
 - name: rosmaster
   repository: ros/ros_comm
-  version: 5da095d06bccbea708394b399215d8a066797266
+  version: 1.15.7
   path: tools/rosmaster
-  release_version: 1.14.3.post0
   requires:
     - defusedxml
     - rosgraph
 - name: rostest
   repository: ros/ros_comm
-  version: 5da095d06bccbea708394b399215d8a066797266
+  version: 1.15.7
   path: tools/rostest
-  release_version: 1.14.3.post0
 - name: roslaunch
   repository: ros/ros_comm
-  version: 5da095d06bccbea708394b399215d8a066797266
+  version: 1.15.7
   path: tools/roslaunch
-  release_version: 1.14.3.post0
 - name: message_filters
   repository: ros/ros_comm
-  version: 5da095d06bccbea708394b399215d8a066797266
+  version: 1.15.7
   path: utilities/message_filters
-  release_version: 1.14.3.post0
 # tf
 - name: tf_conversions
   repository: ros/geometry
@@ -114,8 +109,7 @@
   version: 1.12.0
 - name: genpy
   repository: ros/genpy
-  version: 4a094eaaa79c379593badcdea58060e26f9fe933
-  release_version: 0.6.9.post0
+  version: 0.6.12
 - name: genmsg
   repository: ros/genmsg
   version: 0.5.12
@@ -134,113 +128,95 @@
 - name: std_msgs
   type: msg
   repository: ros/std_msgs
-  version: 0.5.12
-  release_version: 0.5.12.post0  # genpy==0.6.9.post0
+  version: 0.5.13
 - name: roscpp
   type: msg
   repository: ros/ros_comm
-  version: 1.14.3
+  version: 1.15.7
   path: clients/roscpp
-  release_version: 1.14.3.post0  # genpy==0.6.9.post0
 - name: std_srvs
   type: msg
   repository: ros/ros_comm_msgs
-  version: 1.11.2
+  version: 1.11.3
   path: std_srvs
-  release_version: 1.11.2.post0  # genpy==0.6.9.post0
 - name: rosgraph_msgs
   type: msg
   repository: ros/ros_comm_msgs
-  version: 1.11.2
+  version: 1.11.3
   path: rosgraph_msgs
-  release_version: 1.11.2.post0  # genpy==0.6.9.post0
 - name: geometry_msgs
   type: msg
   repository: ros/common_msgs
-  version: 1.12.7
+  version: 1.13.0
   path: geometry_msgs
-  release_version: 1.12.7.post0  # genpy==0.6.9.post0
 - name: sensor_msgs
   type: msg
   repository: ros/common_msgs
-  version: 1.12.7
+  version: 1.13.0
   path: sensor_msgs
-  release_version: 1.12.7.post0  # genpy==0.6.9.post0
+  release_version: 
 - name: actionlib_msgs
   type: msg
   repository: ros/common_msgs
-  version: 1.12.7
+  version: 1.13.0
   path: actionlib_msgs
-  release_version: 1.12.7.post0  # genpy==0.6.9.post0
 - name: shape_msgs
   type: msg
   repository: ros/common_msgs
-  version: 1.12.7
+  version: 1.13.0
   path: shape_msgs
-  release_version: 1.12.7.post0  # genpy==0.6.9.post0
 - name: diagnostic_msgs
   type: msg
   repository: ros/common_msgs
-  version: 1.12.7
+  version: 1.13.0
   path: diagnostic_msgs
-  release_version: 1.12.7.post0  # genpy==0.6.9.post0
 - name: nav_msgs
   type: msg
   repository: ros/common_msgs
-  version: 1.12.7
+  version: 1.13.0
   path: nav_msgs
-  release_version: 1.12.7.post0  # genpy==0.6.9.post0
 - name: stereo_msgs
   type: msg
   repository: ros/common_msgs
-  version: 1.12.7
+  version: 1.13.0
   path: stereo_msgs
-  release_version: 1.12.7.post0  # genpy==0.6.9.post0
 - name: trajectory_msgs
   type: msg
   repository: ros/common_msgs
-  version: 1.12.7
+  version: 1.13.0
   path: trajectory_msgs
-  release_version: 1.12.7.post0  # genpy==0.6.9.post0
 - name: visualization_msgs
   type: msg
   repository: ros/common_msgs
-  version: 1.12.7
+  version: 1.13.0
   path: visualization_msgs
-  release_version: 1.12.7.post0  # genpy==0.6.9.post0
 - name: tf
   repository: ros/geometry
-  version: 1.12.0
+  version: 1.12.1
   path: tf
   src: src
-  release_version: 1.12.0.post0  # genpy==0.6.9.post0
 - name: tf2_msgs
   type: msg
   repository: ros/geometry2
-  version: 0.6.5
+  version: 0.7.2
   path: tf2_msgs
-  release_version: 0.6.5.post0  # genpy==0.6.9.post0
 - name: control_msgs
   type: msg
   repository: ros-controls/control_msgs
-  version: 1.5.0
+  version: 1.5.2
   path: control_msgs
-  release_version: 1.5.0.post0  # genpy==0.6.9.post0
 - name: map_msgs
   type: msg
   repository: ros-planning/navigation_msgs
-  version: 1.13.0
+  version: 1.14.0
   path: map_msgs
-  release_version: 1.13.0.post0  # genpy==0.6.9.post0
 - name: move_base_msgs
   type: msg
   repository: ros-planning/navigation_msgs
-  version: 1.13.0
+  version: 1.14.0
   path: move_base_msgs
-  release_version: 1.13.0.post0  # genpy==0.6.9.post0
 - name: gazebo_msgs
   type: msg
   repository: ros-simulation/gazebo_ros_pkgs
-  version: 2.5.19
+  version: 2.5.20
   path: gazebo_msgs
-  release_version: 2.5.19.post0  # genpy==0.6.9.post0

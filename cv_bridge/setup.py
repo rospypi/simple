@@ -6,5 +6,6 @@ d = generate_distutils_setup()
 
 d['packages'] = ['cv_bridge', 'cv_bridge.boost']
 d['package_dir'] = {'' : 'python'}
+d['version'] += ".post0"
 
 setup(**d)

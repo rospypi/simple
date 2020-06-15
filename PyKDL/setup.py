@@ -70,7 +70,7 @@ class _build_ext(build_ext):
 setup(
     name="PyKDL",
     packages=["PyKDL"],
-    version="1.4.post0",
+    version="1.4.post1",
     ext_package="PyKDL",
     ext_modules=[_Extension(
         "PyKDL",
