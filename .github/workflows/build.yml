@@ -1,13 +1,53 @@
 name: Build test
 on:
   push:
-    branches:
-      - master
+    tags:
   pull_request:
     branches:
       - master
 jobs:
-  build:
+  universal-build:
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.6
+    - name: Install rospy-build
+      run: |
+        python -m pip install --upgrade pip
+        pip install -U setuptools wheel
+        ./rospy-builder/install.sh
+        pip install rospy-builder/
+    - name: Download deployed packages
+      run: |
+        git clone -b any https://github.com/rospypi/simple.git any
+        rm any/.git -rf
+    - name: Build platform independent packages
+      run: |
+        rospy-build build -d any
+    - name: Check if Git tag exists
+      run: echo "::set-env name=HEAD_TAG::$(git tag --points-at HEAD)"
+    - name: Runs only if Git tag exists
+      if: env.HEAD_TAG != ''
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        cd any
+        git init
+        git config user.name "Tamaki Nishino"
+        git config user.email "otamachan@gmail.com"
+        git remote add origin https://otamachan:${GITHUB_TOKEN}@github.com/rospypi/simple.git
+        git checkout -b any
+        git add .
+        git commit -am "Release $(date)"
+        git push -f origin any
+
+  native-build:
+    needs: universal-build
     runs-on: ${{ matrix.platform }}
     strategy:
       matrix:
@@ -27,12 +67,22 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install packages(Ubuntu)
       if: startsWith(matrix.platform, 'ubuntu-')
-      run: sudo apt install liblz4-dev sip-dev libeigen3-dev sip-dev libboost-all-dev
+      env:
+        PYTHON_VERSION: ${{ matrix.python-version }}
+      run: |
+        sudo apt install liblz4-dev sip-dev libeigen3-dev sip-dev libboost-all-dev
+        echo ::set-env name=BRANCH_NAME::Linux_${PYTHON_VERSION}
     - name: Install packages(MacOS)
       if: startsWith(matrix.platform, 'macos-')
-      run: brew install eigen boost
+      env:
+        PYTHON_VERSION: ${{ matrix.python-version }}
+      run: |
+        brew install eigen boost
+        echo ::set-env name=BRANCH_NAME::Darwin_${PYTHON_VERSION}
     - name: Install packages(Windows)
       if: startsWith(matrix.platform, 'windows-')
+      env:
+        PYTHON_VERSION: ${{ matrix.python-version }}
       run: |
         curl -LO -s "https://github.com/lz4/lz4/archive/v1.9.2.zip"
         unzip -q v1.9.2.zip -d roslz4
@@ -40,15 +90,79 @@ jobs:
         curl -LO -s "https://gitlab.com/libeigen/eigen/-/archive/3.3.7/eigen-3.3.7.zip"
         unzip -q eigen-3.3.7.zip -d PyKDL
         echo ::set-env name=EIGEN_ROOT::eigen-3.3.7
+        echo ::set-env name=BRANCH_NAME::Windows_${PYTHON_VERSION}
       shell: bash
     - name: Install rospy-build
       run: |
         python -m pip install --upgrade pip
-        pip install setuptools wheel
-        pip install "git+https://github.com/ros-infrastructure/catkin_pkg.git#egg=0.4.13"
-        pip install "git+https://github.com/ros/genmsg.git#egg=0.5.12"
-        pip install "git+https://github.com/ros/genpy.git#egg=0.6.8"
+        pip install -U setuptools wheel
+        bash ./rospy-builder/install.sh
         pip install rospy-builder/
+    - name: Download deployed packages
+      run: |
+        git clone -b ${BRANCH_NAME} https://github.com/rospypi/simple.git ${BRANCH_NAME} || true
+        mkdir -p ${BRANCH_NAME}
+        rm -rf ${BRANCH_NAME}/.git
+      shell: bash
     - name: Build packages
       run: |
-        rospy-build build --local
+        rospy-build build -d ${BRANCH_NAME} --native
+      shell: bash
+    - name: Check if Git tag exists
+      run: echo "::set-env name=HEAD_TAG::$(git tag --points-at HEAD)"
+      shell: bash
+    - name: Runs only if Git tag exists
+      if: env.HEAD_TAG != ''
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        cd ${BRANCH_NAME}
+        git init
+        git config user.name "Tamaki Nishino"
+        git config user.email "otamachan@gmail.com"
+        git remote add origin https://otamachan:${GITHUB_TOKEN}@github.com/rospypi/simple.git
+        git checkout -b ${BRANCH_NAME}
+        git add .
+        git commit -am "Release $(date)"
+        git push -f origin ${BRANCH_NAME}
+      shell: bash
+
+  update-pages:
+    needs: native-build
+    runs-on: ubuntu-18.04
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: true
+    - name: Set up Python
+      uses: actions/setup-python@v1
+      with:
+        python-version: 3.6
+    - name: Install rospy-build
+      run: |
+        python -m pip install --upgrade pip
+        pip install -U setuptools wheel
+        ./rospy-builder/install.sh
+        pip install rospy-builder/
+    - name: Generate index html
+      run: |
+        mkdir index
+        rospy-build index index
+    - name: Check if Git tag exists
+      run: echo "::set-env name=HEAD_TAG::$(git tag --points-at HEAD)"
+      shell: bash
+    - name: Runs only if Git tag exists
+      if: env.HEAD_TAG != ''
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        cd index
+        git init
+        git config user.name "Tamaki Nishino"
+        git config user.email "otamachan@gmail.com"
+        git remote add origin https://otamachan:${GITHUB_TOKEN}@github.com/rospypi/simple.git
+        git checkout -b gh-pages
+        git add .
+        git commit -am "Release $(date)"
+        git push -f origin gh-pages
+      shell: bash
