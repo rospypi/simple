@@ -29,10 +29,8 @@ jobs:
     - name: Build platform independent packages
       run: |
         rospy-build build -d any
-    - name: Check if Git tag exists
-      run: echo "::set-env name=HEAD_TAG::$(git tag --points-at HEAD)"
-    - name: Runs only if Git tag exists
-      if: env.HEAD_TAG != ''
+    - name: Runs only when tagged
+      if: startsWith(github.ref, 'refs/tags/')
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
@@ -108,11 +106,8 @@ jobs:
       run: |
         rospy-build build -d ${BRANCH_NAME} --native
       shell: bash
-    - name: Check if Git tag exists
-      run: echo "::set-env name=HEAD_TAG::$(git tag --points-at HEAD)"
-      shell: bash
-    - name: Runs only if Git tag exists
-      if: env.HEAD_TAG != ''
+    - name: Runs only when tagged
+      if: startsWith(github.ref, 'refs/tags/')
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
@@ -148,11 +143,8 @@ jobs:
       run: |
         mkdir index
         rospy-build index index
-    - name: Check if Git tag exists
-      run: echo "::set-env name=HEAD_TAG::$(git tag --points-at HEAD)"
-      shell: bash
-    - name: Runs only if Git tag exists
-      if: env.HEAD_TAG != ''
+    - name: Runs only when tagged
+      if: startsWith(github.ref, 'refs/tags/')
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
