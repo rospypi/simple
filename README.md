@@ -63,10 +63,17 @@ pip install --extra-index-url http://localhost:8000/index/ rospy
 ``build.py`` downloads packages from github.com, builds wheel files and generates a Python package server directory.
 
 ```bash
+git submodule update --init --recursive
+# create virtualenv for build packages
 virtualenv -p python3 dev
 . ./dev/bin/activate
 pip install --extra-index-url https://rospypi.github.io/simple/ -e rospy-builder/
-rospy-build build
+# build pure python packages
+rospy-build build -d any
+# build platform depended packages if you need
+rospy-build build -d linux --native
+# build index html files
+rospy-build index --local any --local linux
 python -m http.server
 ```
 

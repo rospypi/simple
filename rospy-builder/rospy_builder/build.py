@@ -179,8 +179,9 @@ def build_package(
                 return
             print("copy")
             shutil.copy(tar_file, dest_package_dir)
-        if (not only_binary and native_build is None) or \
-           (only_binary and native_build is not None):
+        if (not only_binary and native_build is None) or (
+            only_binary and native_build is not None
+        ):
             # if it's updated build the binary package
             sys.argv = ["", "bdist_wheel", "--universal"]
             exec(setup_code, globals())
@@ -559,30 +560,45 @@ def genmsg(path: str, search_dir: str) -> None:
 
 
 @cli.command(help="generate index html")
-@click.argument("path", type=click.Path(exists=True), required=True)
-def index(path: str) -> None:
-    repo = git.Repo()
-    origin = repo.remotes.origin
-    origin.fetch()
+@click.argument("path", type=click.Path(), required=True)
+@click.option("--local", multiple=True, default=[])
+def index(path: str, local: List[str]) -> None:
     packages = {}
-    for t in origin.refs["any"].commit.tree.trees:
-        packages[t.name] = []
-        for b in t.blobs:
-            packages[t.name].append(("any", b.name))
-    for platform in ("Linux", "Darwin", "Windows"):
-        for version in ("3.6", "3.7", "3.8"):
-            branch_name = platform + "_" + version
-            if branch_name in origin.refs:
-                for t in origin.refs[branch_name].commit.tree.trees:
+    if local:
+        for local_path in local:
+            for dirname in pathlib.Path(local_path).glob("*"):
+                for fname in dirname.glob("*"):
+                    package_name = fname.parent.name
+                    packages.setdefault(package_name, [])
+                    packages[package_name].append((f"/{fname}", fname.name,))
+    else:
+        repo = git.Repo()
+        origin = repo.remotes.origin
+        origin.fetch()
+        url = pathlib.Path(origin.url)
+        raw_url = (
+            pathlib.Path("github.com") / url.parent.name / url.stem / "raw"
+        )
+        branches = ["any"]
+        for platform in ("Linux", "Darwin", "Windows"):
+            for version in ("3.6", "3.7", "3.8"):
+                branches.append(platform + "_" + version)
+        for branch in branches:
+            if branch in origin.refs:
+                for t in origin.refs[branch].commit.tree.trees:
                     for b in t.blobs:
-                        packages[t.name].append((branch_name, b.name))
-    url = pathlib.Path(origin.url)
-    raw_url = pathlib.Path("github.com") / url.parent.name / url.stem / "raw"
+                        packages.setdefault(t.name, [])
+                        packages[t.name].append(
+                            (
+                                f"https://{raw_url}/{branch}/{t.name}/{b.name}",
+                                b.name,
+                            )
+                        )
     for package_name, files in packages.items():
         files_list = "".join(
             [
-                f'<a href="https://{raw_url}/{branch}/{package_name}/{fname}">{fname}</a><br>\n'  # NOQA
-                for branch, fname in sorted(files)
+                f'<a href="{url}">{fname}</a><br>\n'
+                for url, fname in sorted(files)
             ]
         )
         parent = pathlib.Path(path) / package_name
