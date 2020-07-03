@@ -3,7 +3,10 @@ all:
 	g++ --shared -fPIC -o PyKDL.so \
 		-std=c++14 \
 		-I. \
-		*.cpp \
+		-Iinclude \
+		-Iinclude/kdl \
+		-Iorocos_kinematics_dynamics/python_orocos_kdl/pybind11/include \
+		orocos_kinematics_dynamics/python_orocos_kdl/PyKDL/pybind11/*.cpp \
 		orocos_kinematics_dynamics/orocos_kdl/src/*.cpp \
 		orocos_kinematics_dynamics/orocos_kdl/src/utilities/*.cpp \
 		orocos_kinematics_dynamics/orocos_kdl/src/utilities/*.cxx \
