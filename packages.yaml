@@ -27,8 +27,8 @@
 - name: roslib
   repository: ros/ros
   version: 1.14.7
-  path: core/roslib
   release_version: 1.14.7.post0
+  path: core/roslib
   requires:
     - catkin
 - name: rosunit
@@ -97,8 +97,8 @@
 - name: tf2_geometry_msgs
   repository: ros/geometry2
   version: 0.6.5
-  path: tf2_geometry_msgs
   release_version: 0.6.5.post0
+  path: tf2_geometry_msgs
   unrequires:
     - orocos_kdl
   requires:
@@ -138,27 +138,31 @@
   type: msg
   repository: ros/ros_comm_msgs
   version: 1.11.3
+  release_version: 1.11.3.post0
   path: std_srvs
 - name: rosgraph_msgs
   type: msg
   repository: ros/ros_comm_msgs
   version: 1.11.3
+  release_version: 1.11.3.post0
   path: rosgraph_msgs
 - name: geometry_msgs
   type: msg
   repository: ros/common_msgs
   version: 1.13.0
+  release_version: 1.13.0.post0
   path: geometry_msgs
 - name: sensor_msgs
   type: msg
   repository: ros/common_msgs
   version: 1.13.0
+  release_version: 1.13.0.post0
   path: sensor_msgs
-  release_version: 
 - name: actionlib_msgs
   type: msg
   repository: ros/common_msgs
   version: 1.13.0
+  release_version: 1.13.0.post0
   path: actionlib_msgs
 - name: shape_msgs
   type: msg
@@ -169,54 +173,65 @@
   type: msg
   repository: ros/common_msgs
   version: 1.13.0
+  release_version: 1.13.0.post0
   path: diagnostic_msgs
 - name: nav_msgs
   type: msg
   repository: ros/common_msgs
   version: 1.13.0
+  release_version: 1.13.0.post0
   path: nav_msgs
 - name: stereo_msgs
   type: msg
   repository: ros/common_msgs
   version: 1.13.0
+  release_version: 1.13.0.post0
   path: stereo_msgs
 - name: trajectory_msgs
   type: msg
   repository: ros/common_msgs
   version: 1.13.0
+  release_version: 1.13.0.post0
   path: trajectory_msgs
 - name: visualization_msgs
   type: msg
   repository: ros/common_msgs
   version: 1.13.0
+  release_version: 1.13.0.post0
   path: visualization_msgs
 - name: tf
   repository: ros/geometry
   version: 1.12.1
+  release_version: 1.12.1.post0
   path: tf
   src: src
 - name: tf2_msgs
   type: msg
   repository: ros/geometry2
   version: 0.7.2
+  release_version: 0.7.2.post0
   path: tf2_msgs
 - name: control_msgs
   type: msg
   repository: ros-controls/control_msgs
   version: 1.5.2
+  release_version: 1.5.2.post0
   path: control_msgs
 - name: map_msgs
   type: msg
   repository: ros-planning/navigation_msgs
   version: 1.14.0
+  release_version: 1.14.0.post0
   path: map_msgs
 - name: move_base_msgs
   type: msg
   repository: ros-planning/navigation_msgs
   version: 1.14.0
+  release_version: 1.14.0.post0
   path: move_base_msgs
 - name: gazebo_msgs
   type: msg
   repository: ros-simulation/gazebo_ros_pkgs
   version: 2.5.20
+  release_version: 2.5.20.post0
   path: gazebo_msgs

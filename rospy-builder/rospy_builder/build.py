@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import difflib
 import hashlib
 import os
 import pathlib
@@ -16,7 +17,7 @@ import click
 import git
 import yaml
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 
 def normalize(name: str) -> str:
@@ -24,7 +25,7 @@ def normalize(name: str) -> str:
     return re.sub(r"[-_.]+", "-", name).lower()
 
 
-def tarsum(file_name: pathlib.Path) -> str:
+def get_contents(file_name: pathlib.Path) -> Dict[str, str]:
     tar = tarfile.open(mode="r|*", fileobj=file_name.open("rb"))
     h = hashlib.sha256()
     contents = {}
@@ -33,9 +34,25 @@ def tarsum(file_name: pathlib.Path) -> str:
             continue
         f = tar.extractfile(member)
         contents[member.name] = f.read()
-    for f in sorted(contents.keys()):
-        h.update(contents[f])
-    return h.hexdigest()
+    return contents
+
+
+def is_content_equal(c1: Dict[str, str], c2: Dict[str, str]) -> bool:
+    if len(c1.keys()) != len(c1.keys()):
+        print("number of contents is not same")
+        print(c1.keys())
+        print(c2.keys())
+        return False
+    for key in c1.keys():
+        if key not in c2:
+            print(f"file does not exist: {key}")
+            return False
+        if c1[key] != c2[key]:
+            print(f"file is not equal: {key}")
+            for diff in difflib.diff_bytes(difflib.unified_diff, c1[key].splitlines(), c2[key].splitlines()):
+                print(diff)
+            return False
+    return True
 
 
 def download_from_github(
@@ -159,9 +176,9 @@ def build_package(
             tar_file = next((package_dir / "dist").glob("*.tar.gz"))
             if (dest_package_dir / tar_file.name).exists():
                 if compare:
-                    digest0 = tarsum(tar_file)
-                    digest1 = tarsum(dest_package_dir / tar_file.name)
-                    if digest0 != digest1:
+                    contents0 = get_contents(tar_file)
+                    contents1 = get_contents(dest_package_dir / tar_file.name)
+                    if not is_content_equal(contents0, contents1):
                         print(
                             "Hash is not same! Remove or change the version."
                             f"{tar_file.name}"
@@ -179,8 +196,9 @@ def build_package(
                 return
             print("copy")
             shutil.copy(tar_file, dest_package_dir)
-        if (not only_binary and native_build is None) or \
-           (only_binary and native_build is not None):
+        if (not only_binary and native_build is None) or (
+            only_binary and native_build is not None
+        ):
             # if it's updated build the binary package
             sys.argv = ["", "bdist_wheel", "--universal"]
             exec(setup_code, globals())
@@ -559,30 +577,45 @@ def genmsg(path: str, search_dir: str) -> None:
 
 
 @cli.command(help="generate index html")
-@click.argument("path", type=click.Path(exists=True), required=True)
-def index(path: str) -> None:
-    repo = git.Repo()
-    origin = repo.remotes.origin
-    origin.fetch()
+@click.argument("path", type=click.Path(), required=True)
+@click.option("--local", multiple=True, default=[])
+def index(path: str, local: List[str]) -> None:
     packages = {}
-    for t in origin.refs["any"].commit.tree.trees:
-        packages[t.name] = []
-        for b in t.blobs:
-            packages[t.name].append(("any", b.name))
-    for platform in ("Linux", "Darwin", "Windows"):
-        for version in ("3.6", "3.7", "3.8"):
-            branch_name = platform + "_" + version
-            if branch_name in origin.refs:
-                for t in origin.refs[branch_name].commit.tree.trees:
+    if local:
+        for local_path in local:
+            for dirname in pathlib.Path(local_path).glob("*"):
+                for fname in dirname.glob("*"):
+                    package_name = fname.parent.name
+                    packages.setdefault(package_name, [])
+                    packages[package_name].append((f"/{fname}", fname.name,))
+    else:
+        repo = git.Repo()
+        origin = repo.remotes.origin
+        origin.fetch()
+        url = pathlib.Path(origin.url)
+        raw_url = (
+            pathlib.Path("github.com") / url.parent.name / url.stem / "raw"
+        )
+        branches = ["any"]
+        for platform in ("Linux", "Darwin", "Windows"):
+            for version in ("3.6", "3.7", "3.8"):
+                branches.append(platform + "_" + version)
+        for branch in branches:
+            if branch in origin.refs:
+                for t in origin.refs[branch].commit.tree.trees:
                     for b in t.blobs:
-                        packages[t.name].append((branch_name, b.name))
-    url = pathlib.Path(origin.url)
-    raw_url = pathlib.Path("github.com") / url.parent.name / url.stem / "raw"
+                        packages.setdefault(t.name, [])
+                        packages[t.name].append(
+                            (
+                                f"https://{raw_url}/{branch}/{t.name}/{b.name}",
+                                b.name,
+                            )
+                        )
     for package_name, files in packages.items():
         files_list = "".join(
             [
-                f'<a href="https://{raw_url}/{branch}/{package_name}/{fname}">{fname}</a><br>\n'  # NOQA
-                for branch, fname in sorted(files)
+                f'<a href="{url}">{fname}</a><br>\n'
+                for url, fname in sorted(files)
             ]
         )
         parent = pathlib.Path(path) / package_name
