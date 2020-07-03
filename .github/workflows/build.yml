@@ -11,7 +11,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        submodules: true
+        submodules: recursive
     - name: Set up Python
       uses: actions/setup-python@v1
       with:
@@ -58,7 +58,7 @@ jobs:
       if: startsWith(matrix.platform, 'windows-')
     - uses: actions/checkout@v2
       with:
-        submodules: true
+        submodules: recursive
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v1
       with:
@@ -128,7 +128,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
       with:
-        submodules: true
+        submodules: recursive
     - name: Set up Python
       uses: actions/setup-python@v1
       with:
