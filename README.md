@@ -4,9 +4,15 @@
 
 ## What is this for?
 
-``rospy`` [packages](https://rospypi.github.io/simple/) without ROS installation. This can be run in a pure virtualenv.
-It also supports ``tf2`` and experimetally Python3.
-So you can run ``rospy`` without ``catkin`` and Python2.
+``rospy`` [packages](https://rospypi.github.io/simple/) without ROS installation.
+This can be run in a pure virtualenv.
+It also supports ``tf2`` and other some binary packages.
+
+Python version: 3.6, 3.7, 3.8
+
+Support platform: Linux, Windows, MacOSX
+
+(Not all the packages are tested.)
 
 ## Install
 
