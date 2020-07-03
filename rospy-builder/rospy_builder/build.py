@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import difflib
 import hashlib
 import os
 import pathlib
@@ -16,7 +17,7 @@ import click
 import git
 import yaml
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 
 def normalize(name: str) -> str:
@@ -24,7 +25,7 @@ def normalize(name: str) -> str:
     return re.sub(r"[-_.]+", "-", name).lower()
 
 
-def tarsum(file_name: pathlib.Path) -> str:
+def get_contents(file_name: pathlib.Path) -> Dict[str, str]:
     tar = tarfile.open(mode="r|*", fileobj=file_name.open("rb"))
     h = hashlib.sha256()
     contents = {}
@@ -33,9 +34,25 @@ def tarsum(file_name: pathlib.Path) -> str:
             continue
         f = tar.extractfile(member)
         contents[member.name] = f.read()
-    for f in sorted(contents.keys()):
-        h.update(contents[f])
-    return h.hexdigest()
+    return contents
+
+
+def is_content_equal(c1: Dict[str, str], c2: Dict[str, str]) -> bool:
+    if len(c1.keys()) != len(c1.keys()):
+        print("number of contents is not same")
+        print(c1.keys())
+        print(c2.keys())
+        return False
+    for key in c1.keys():
+        if key not in c2:
+            print(f"file does not exist: {key}")
+            return False
+        if c1[key] != c2[key]:
+            print(f"file is not equal: {key}")
+            for diff in difflib.diff_bytes(difflib.unified_diff, c1[key].splitlines(), c2[key].splitlines()):
+                print(diff)
+            return False
+    return True
 
 
 def download_from_github(
@@ -159,9 +176,9 @@ def build_package(
             tar_file = next((package_dir / "dist").glob("*.tar.gz"))
             if (dest_package_dir / tar_file.name).exists():
                 if compare:
-                    digest0 = tarsum(tar_file)
-                    digest1 = tarsum(dest_package_dir / tar_file.name)
-                    if digest0 != digest1:
+                    contents0 = get_contents(tar_file)
+                    contents1 = get_contents(dest_package_dir / tar_file.name)
+                    if not is_content_equal(contents0, contents1):
                         print(
                             "Hash is not same! Remove or change the version."
                             f"{tar_file.name}"
