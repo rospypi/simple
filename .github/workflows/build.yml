@@ -5,6 +5,8 @@ on:
   pull_request:
     branches:
       - master
+env:
+  MASTER_BRANCH: refs/heads/master
 jobs:
   universal-build:
     runs-on: ubuntu-18.04
@@ -22,15 +24,22 @@ jobs:
         pip install -U setuptools wheel
         ./rospy-builder/install.sh
         pip install rospy-builder/
+    - name: Export branch suffix and make an empty directory
+      if: github.ref == env.MASTER_BRANCH
+      run: |
+        echo ::set-env name=BRANCH_SUFFIX::_pre
+        mkdir -p any
+      shell: bash
     - name: Download deployed packages
+      if: github.ref != env.MASTER_BRANCH
       run: |
         git clone -b any https://github.com/rospypi/simple.git any
         rm any/.git -rf
     - name: Build platform independent packages
       run: |
         rospy-build build -d any
-    - name: Runs only when tagged
-      if: startsWith(github.ref, 'refs/tags/')
+    - name: Runs only when tagged or pushed to master
+      if: startsWith(github.ref, 'refs/tags/') || github.ref == env.MASTER_BRANCH
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
@@ -39,10 +48,10 @@ jobs:
         git config user.name "Tamaki Nishino"
         git config user.email "otamachan@gmail.com"
         git remote add origin https://otamachan:${GITHUB_TOKEN}@github.com/rospypi/simple.git
-        git checkout -b any
+        git checkout -b any${BRANCH_SUFFIX}
         git add .
         git commit -am "Release $(date)"
-        git push -f origin any
+        git push -f origin any${BRANCH_SUFFIX}
 
   native-build:
     needs: universal-build
@@ -96,7 +105,14 @@ jobs:
         pip install -U setuptools wheel
         bash ./rospy-builder/install.sh
         pip install rospy-builder/
+    - name: Export branch suffix and make an empty directory
+      if: github.ref == env.MASTER_BRANCH
+      run: |
+        echo ::set-env name=BRANCH_SUFFIX::_pre
+        mkdir -p ${BRANCH_NAME}
+      shell: bash
     - name: Download deployed packages
+      if: github.ref != env.MASTER_BRANCH
       run: |
         git clone -b ${BRANCH_NAME} https://github.com/rospypi/simple.git ${BRANCH_NAME} || true
         mkdir -p ${BRANCH_NAME}
@@ -106,8 +122,8 @@ jobs:
       run: |
         rospy-build build -d ${BRANCH_NAME} --native
       shell: bash
-    - name: Runs only when tagged
-      if: startsWith(github.ref, 'refs/tags/')
+    - name: Runs only when tagged or pushed to master
+      if: startsWith(github.ref, 'refs/tags/') || github.ref == env.MASTER_BRANCH
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
@@ -116,10 +132,10 @@ jobs:
         git config user.name "Tamaki Nishino"
         git config user.email "otamachan@gmail.com"
         git remote add origin https://otamachan:${GITHUB_TOKEN}@github.com/rospypi/simple.git
-        git checkout -b ${BRANCH_NAME}
+        git checkout -b ${BRANCH_NAME}${BRANCH_SUFFIX}
         git add .
         git commit -am "Release $(date)"
-        git push -f origin ${BRANCH_NAME}
+        git push -f origin ${BRANCH_NAME}${BRANCH_SUFFIX}
       shell: bash
 
   update-pages:
@@ -143,8 +159,9 @@ jobs:
       run: |
         mkdir index
         rospy-build index index
-    - name: Runs only when tagged
-      if: startsWith(github.ref, 'refs/tags/')
+        rospy-build index --prefix pre index/_pre
+    - name: Runs only when tagged or pushed to master
+      if: startsWith(github.ref, 'refs/tags/') || github.ref == env.MASTER_BRANCH
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
@@ -154,6 +171,7 @@ jobs:
         git config user.email "otamachan@gmail.com"
         git remote add origin https://otamachan:${GITHUB_TOKEN}@github.com/rospypi/simple.git
         git checkout -b gh-pages
+        touch .nojekyll
         git add .
         git commit -am "Release $(date)"
         git push -f origin gh-pages

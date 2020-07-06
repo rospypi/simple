@@ -578,8 +578,9 @@ def genmsg(path: str, search_dir: str) -> None:
 
 @cli.command(help="generate index html")
 @click.argument("path", type=click.Path(), required=True)
+@click.option("--prefix", default="", type=str)
 @click.option("--local", multiple=True, default=[])
-def index(path: str, local: List[str]) -> None:
+def index(path: str, prefix: str, local: List[str]) -> None:
     packages = {}
     if local:
         for local_path in local:
@@ -600,6 +601,9 @@ def index(path: str, local: List[str]) -> None:
         for platform in ("Linux", "Darwin", "Windows"):
             for version in ("3.6", "3.7", "3.8"):
                 branches.append(platform + "_" + version)
+        if prefix:
+            for idx in range(len(branches)):
+                branches[idx] += "_" + prefix
         for branch in branches:
             if branch in origin.refs:
                 for t in origin.refs[branch].commit.tree.trees:
@@ -628,7 +632,9 @@ def index(path: str, local: List[str]) -> None:
     package_list = "".join(
         [f'<a href="{p}/">{p}</a><br>\n' for p in sorted(packages.keys())]
     )
-    (pathlib.Path(path) / "index.html").write_text(
+    index_dir = pathlib.Path(path)
+    index_dir.mkdir(parents=True, exist_ok=True)
+    (index_dir / "index.html").write_text(
         f"<!DOCTYPE html><html><body>\n{package_list}</body></html>"
     )
 
