@@ -5,14 +5,14 @@
 ## What is this for?
 
 ``rospy`` [packages](https://rospypi.github.io/simple/) without ROS installation.
-This can be run in a pure virtualenv.
-It also supports ``tf2`` and other some binary packages.
+It can be run in a pure python virtualenv.
+It also supports ``tf2`` and other binary packages.
 
-Python version: 3.6, 3.7, 3.8
+Supported Python versions: 3.6, 3.7, 3.8
 
-Support platform: Linux, Windows, MacOSX
+Support platforms: Linux, Windows, MacOSX
 
-(Not all the packages are tested.)
+(Not all packages are tested.)
 
 ## Install
 
@@ -64,7 +64,7 @@ pip install --extra-index-url http://localhost:8000/index/ rospy
 ```
 
 
-## Development of this repository
+## Development
 
 ``build.py`` downloads packages from github.com, builds wheel files and generates a Python package server directory.
 
