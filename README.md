@@ -83,12 +83,6 @@ rospy-build index --local any --local linux
 python -m http.server
 ```
 
-```bash
-virtualenv -p python3 venv
-. ./venv/bin/activate
-pip install --extra-index-url http://localhost:8000/index/ rospy
-```
-
 ## Generate Message Python Package
 
 ```bash
