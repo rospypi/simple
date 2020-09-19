@@ -7,4 +7,5 @@ include orocos_kinematics_dynamics/orocos_kdl/src/*.cpp
 include orocos_kinematics_dynamics/orocos_kdl/src/utilities/*.cpp
 include orocos_kinematics_dynamics/orocos_kdl/src/utilities/*.cxx
 include orocos_kinematics_dynamics/python_orocos_kdl/PyKDL/pybind11/*.cpp
+include orocos_kinematics_dynamics/python_orocos_kdl/PyKDL/pybind11/*.h
 recursive-include orocos_kinematics_dynamics/python_orocos_kdl/pybind11/include *.h

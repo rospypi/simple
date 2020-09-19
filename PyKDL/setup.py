@@ -27,7 +27,7 @@ if platform.system() == "Darwin":
 setup(
     name="PyKDL",
     packages=["PyKDL"],
-    version="1.4.post2",
+    version="1.4.post3",
     ext_package="PyKDL",
     ext_modules=[Extension(
         "PyKDL",

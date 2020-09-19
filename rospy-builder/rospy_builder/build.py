@@ -200,9 +200,23 @@ def build_package(
         if (not only_binary and native_build is None) or (
             only_binary and native_build is not None
         ):
-            # if it's updated build the binary package
+            # if it's updated, build the binary package
             sys.argv = ["", "bdist_wheel", "--universal"]
-            exec(setup_code, globals())
+
+            # If Python(3.6/3.7) is built with --enable-shared,
+            # disutils will build extenstions with libpython,
+            # which may cause import error in other Python environments.
+            # So we overwrite that config
+            if sys.version_info < (3, 8):
+                import distutils.sysconfig
+                # make sure _config_vars is ready
+                distutils.sysconfig.get_config_vars()
+                org_config_vars = distutils.sysconfig._config_vars
+                distutils.sysconfig._config_vars["Py_ENABLE_SHARED"] = 0
+                exec(setup_code, globals())
+                distutils.sysconfig._config_vars = org_config_vars
+            else:
+                exec(setup_code, globals())
             if native_build == "all":
                 # TODO: find a better way
                 subprocess.call(["python2", "setup.py", "bdist_wheel"])
