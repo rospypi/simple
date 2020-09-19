@@ -15,6 +15,7 @@ import zipfile
 
 import click
 import git
+import pkg_resources
 import yaml
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict
@@ -312,10 +313,11 @@ def generate_package_from_rosmsg(
                     version = v.group(1)
         if release_version is not None:
             version = release_version
+        genpy_version = pkg_resources.get_distribution('genpy').version
         (package_dir / "setup.py").write_text(
             f"""from setuptools import find_packages, setup
 setup(name=\'{package}\', version=\'{version}\', packages=find_packages(),
-      install_requires=[\'genpy<2000\'])"""
+      install_requires=[\'genpy>={genpy_version},<2000\'])"""
         )
 
 
