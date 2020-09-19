@@ -26,8 +26,6 @@ pip install --extra-index-url https://rospypi.github.io/simple/ tf2_ros
 ## Sample
 
 ```python
-import os
-
 import rospy
 import std_msgs.msg
 
@@ -36,8 +34,6 @@ def callback(msg):
     print(msg)
 
 
-os.environ['ROS_MASTER_URI'] = 'http://localhost:11311'
-os.environ['ROS_PYTHON_LOG_CONFIG_FILE'] = '|'  # specify dummy file
 rospy.init_node("hoge")
 rospy.loginfo('start')
 sub = rospy.Subscriber("sub", std_msgs.msg.String, callback)
