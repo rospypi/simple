@@ -9,6 +9,7 @@ install_requires = [
     "pyyaml",
     "setuptools",
     "gitpython",
+    "wheel",
 ]
 
 if sys.version_info < (3, 7):
@@ -16,7 +17,7 @@ if sys.version_info < (3, 7):
 
 setup(
     name="rospy-builder",
-    version="0.5.0",
+    version="0.5.1",
     description="rospy package build tool",
     author="Tamamki Nishino",
     author_email="otamachan@gmail.com",

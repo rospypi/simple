@@ -75,7 +75,7 @@ rospy-build build -d any
 # build platform depended packages if you need
 rospy-build build -d linux --native
 # build index html files
-rospy-build index --local any --local linux
+rospy-build index --local any --local linux index
 python -m http.server
 ```
 
