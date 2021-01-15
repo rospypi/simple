@@ -155,11 +155,11 @@
   release_version: 1.13.0.post1  # genpy 0.6.14
   path: geometry_msgs
 - name: sensor_msgs
-  type: msg
   repository: ros/common_msgs
   version: 1.13.0
-  release_version: 1.13.0.post1  # genpy 0.6.14
+  release_version: 1.13.0.post2  # genpy 0.6.14
   path: sensor_msgs
+  src: src
 - name: actionlib_msgs
   type: msg
   repository: ros/common_msgs
@@ -214,6 +214,15 @@
   version: 0.7.2
   release_version: 0.7.2.post1  # genpy 0.6.14
   path: tf2_msgs
+- name: tf2_sensor_msgs
+  repository: ros/geometry2
+  version: 0.7.2
+  release_version: 0.7.2
+  path: tf2_sensor_msgs
+  unrequires:
+    - orocos_kdl
+  requires:
+    - PyKDL
 - name: control_msgs
   type: msg
   repository: ros-controls/control_msgs
