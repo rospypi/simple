@@ -21,7 +21,7 @@ jobs:
     - name: Install rospy-build
       run: |
         python -m pip install --upgrade pip
-        pip install -U setuptools wheel
+        pip install -U setuptools==51.2.0 wheel
         ./rospy-builder/install.sh
         pip install rospy-builder/
     - name: Export branch suffix and make an empty directory
@@ -102,7 +102,7 @@ jobs:
     - name: Install rospy-build
       run: |
         python -m pip install --upgrade pip
-        pip install -U setuptools wheel
+        pip install -U setuptools==51.2.0 wheel
         bash ./rospy-builder/install.sh
         pip install rospy-builder/
     - name: Export branch suffix and make an empty directory
@@ -152,7 +152,7 @@ jobs:
     - name: Install rospy-build
       run: |
         python -m pip install --upgrade pip
-        pip install -U setuptools wheel
+        pip install -U setuptools==51.2.0 wheel
         ./rospy-builder/install.sh
         pip install rospy-builder/
     - name: Generate index html
