@@ -27,7 +27,7 @@ jobs:
     - name: Export branch suffix and make an empty directory
       if: github.ref == env.MASTER_BRANCH
       run: |
-        echo ::set-env name=BRANCH_SUFFIX::_pre
+        echo BRANCH_SUFFIX=_pre >> $GITHUB_ENV
         mkdir -p any
       shell: bash
     - name: Download deployed packages
@@ -78,14 +78,14 @@ jobs:
         PYTHON_VERSION: ${{ matrix.python-version }}
       run: |
         sudo apt install liblz4-dev sip-dev libeigen3-dev sip-dev libboost-all-dev
-        echo ::set-env name=BRANCH_NAME::Linux_${PYTHON_VERSION}
+        echo BRANCH_NAME=Linux_${PYTHON_VERSION} >> $GITHUB_ENV
     - name: Install packages(MacOS)
       if: startsWith(matrix.platform, 'macos-')
       env:
         PYTHON_VERSION: ${{ matrix.python-version }}
       run: |
         brew install eigen boost
-        echo ::set-env name=BRANCH_NAME::Darwin_${PYTHON_VERSION}
+        echo BRANCH_NAME=Darwin_${PYTHON_VERSION} >> $GITHUB_ENV
     - name: Install packages(Windows)
       if: startsWith(matrix.platform, 'windows-')
       env:
@@ -96,8 +96,8 @@ jobs:
         "/c/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/MSBuild/Current/Bin/MSBuild.exe" "roslz4\lz4-1.9.2\visual\VS2017\lz4.sln" //t:liblz4 //p:Configuration=Release //p:Platform="x64" //p:ForceImportBeforeCppTargets="D:\a\simple\simple\roslz4\build.props" //p:WindowsTargetPlatformVersion="10.0.18362.0"
         curl -LO -s "https://gitlab.com/libeigen/eigen/-/archive/3.3.7/eigen-3.3.7.zip"
         unzip -q eigen-3.3.7.zip -d PyKDL
-        echo ::set-env name=EIGEN_ROOT::eigen-3.3.7
-        echo ::set-env name=BRANCH_NAME::Windows_${PYTHON_VERSION}
+        echo EIGEN_ROOT=eigen-3.3.7 >> $GITHUB_ENV
+        echo BRANCH_NAME=Windows_${PYTHON_VERSION} >> $GITHUB_ENV
       shell: bash
     - name: Install rospy-build
       run: |
@@ -108,7 +108,7 @@ jobs:
     - name: Export branch suffix and make an empty directory
       if: github.ref == env.MASTER_BRANCH
       run: |
-        echo ::set-env name=BRANCH_SUFFIX::_pre
+        echo BRANCH_SUFFIX=_pre >> $GITHUB_ENV
         mkdir -p ${BRANCH_NAME}
       shell: bash
     - name: Download deployed packages
