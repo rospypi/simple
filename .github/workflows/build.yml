@@ -49,6 +49,7 @@ jobs:
         git config user.email "otamachan@gmail.com"
         git remote add origin https://otamachan:${GITHUB_TOKEN}@github.com/rospypi/simple.git
         git checkout -b any${BRANCH_SUFFIX}
+        touch .keep
         git add .
         git commit -am "Release $(date)"
         git push -f origin any${BRANCH_SUFFIX}
@@ -134,6 +135,7 @@ jobs:
         git config user.email "otamachan@gmail.com"
         git remote add origin https://otamachan:${GITHUB_TOKEN}@github.com/rospypi/simple.git
         git checkout -b ${BRANCH_NAME}${BRANCH_SUFFIX}
+        touch .keep
         git add .
         git commit -am "Release $(date)"
         git push -f origin ${BRANCH_NAME}${BRANCH_SUFFIX}
