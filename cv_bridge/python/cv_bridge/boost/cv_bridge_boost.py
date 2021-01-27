@@ -11,34 +11,6 @@ _CV_TYPES = {
     "bgra16": cv2.CV_16UC4,
     "mono8": cv2.CV_8UC1,
     "mono16": cv2.CV_16UC1,
-    "8UC1": cv2.CV_8UC1,
-    "8UC2": cv2.CV_8UC2,
-    "8UC3": cv2.CV_8UC3,
-    "8UC4": cv2.CV_8UC4,
-    "8SC1": cv2.CV_8SC1,
-    "8SC2": cv2.CV_8SC2,
-    "8SC3": cv2.CV_8SC3,
-    "8SC4": cv2.CV_8SC4,
-    "16UC1": cv2.CV_8UC1,
-    "16UC2": cv2.CV_8UC2,
-    "16UC3": cv2.CV_8UC3,
-    "16UC4": cv2.CV_8UC4,
-    "16SC1": cv2.CV_16SC1,
-    "16SC2": cv2.CV_16SC2,
-    "16SC3": cv2.CV_16SC3,
-    "16SC4": cv2.CV_16SC4,
-    "32SC1": cv2.CV_32SC1,
-    "32SC2": cv2.CV_32SC2,
-    "32SC3": cv2.CV_32SC3,
-    "32SC4": cv2.CV_32SC4,
-    "32FC1": cv2.CV_32FC1,
-    "32FC2": cv2.CV_32FC2,
-    "32FC3": cv2.CV_32FC3,
-    "32FC4": cv2.CV_32FC4,
-    "64FC1": cv2.CV_64FC1,
-    "64FC2": cv2.CV_64FC2,
-    "64FC3": cv2.CV_64FC3,
-    "64FC4": cv2.CV_64FC4,
     "bayer_rggb8": cv2.CV_8UC1,
     "bayer_bggr8": cv2.CV_8UC1,
     "bayer_gbrg8": cv2.CV_8UC1,
@@ -47,6 +19,7 @@ _CV_TYPES = {
     "bayer_bggr16": cv2.CV_16UC1,
     "bayer_gbrg16": cv2.CV_16UC1,
     "bayer_grbg16": cv2.CV_16UC1,
+    "yuv422": cv2.CV_8UC2,
     }
 
 _CV_CONVERSIONS = {
@@ -99,8 +72,44 @@ _CV_CONVERSIONS = {
     }
 
 
+def CV_MAKETYPE(depth, cn):
+    CV_CN_SHIFT = 3
+    CV_DEPTH_MAX = (1 << CV_CN_SHIFT)
+    CV_DEPTH_MASK = CV_DEPTH_MAX - 1
+    def CV_MAT_DEPTH(flags):
+        return ((flags) & CV_DEPTH_MASK)
+    return (CV_MAT_DEPTH(depth) + (((cn)-1) << CV_CN_SHIFT))
+
+
+def depthStrToInt(depth):
+    if depth == "8U":
+        return 0
+    elif depth == "8S":
+        return 1
+    elif depth == "16U":
+        return 2
+    elif depth == "16S":
+        return 3
+    elif depth == "32S":
+        return 4
+    elif depth == "32F":
+        return 5
+    else:
+        return 6
+
 def getCvType(encoding):
-    return _CV_TYPES[encoding]
+    if encoding in _CV_TYPES:
+      return _CV_TYPES[encoding]
+    import re
+    pre = re.compile("(8U|8S|16U|16S|32S|32F|64F)C([0-9]+)")
+    mat = pre.match(encoding)
+    if mat:
+      return CV_MAKETYPE(depthStrToInt(mat[1]), int(mat[2]))
+    pre = re.compile("(8U|8S|16U|16S|32S|32F|64F)")
+    mat = pre.match(encoding)
+    if mat:
+      return CV_MAKETYPE(depthStrToInt(mat[1]), 1)
+    raise NotImplemented("Wrong encoding...")
 
 
 def cvtColorForDisplay():
