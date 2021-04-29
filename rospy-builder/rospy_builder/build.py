@@ -39,7 +39,7 @@ def get_contents(file_name: pathlib.Path) -> Dict[str, str]:
 
 
 def is_content_equal(c1: Dict[str, str], c2: Dict[str, str]) -> bool:
-    if len(c1.keys()) != len(c1.keys()):
+    if len(c1.keys()) != len(c2.keys()):
         print("number of contents is not same")
         print(c1.keys())
         print(c2.keys())
