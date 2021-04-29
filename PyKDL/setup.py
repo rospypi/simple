@@ -1,11 +1,7 @@
 import glob
 import os
 import platform
-import subprocess
-from distutils.cmd import Command
 from setuptools import setup, Extension
-from setuptools.command.sdist import sdist
-from setuptools.command.build_ext import build_ext
 
 
 orocos_root = "orocos_kinematics_dynamics/"
@@ -23,20 +19,23 @@ if "EIGEN_ROOT" in os.environ:
 if platform.system() == "Darwin":
     include_dirs += ["/usr/local/include/eigen3"]
 
+extra_compile_args = []
+if platform.system() != "Windows":
+    extra_compile_args += ["-std=c++11"]
 
 setup(
     name="PyKDL",
     packages=["PyKDL"],
-    version="1.4.post3",
+    version="1.5",
     ext_package="PyKDL",
     ext_modules=[Extension(
         "PyKDL",
-        glob.glob(orocos_root + "python_orocos_kdl/PyKDL/pybind11/*.cpp") +
+        glob.glob(orocos_root + "python_orocos_kdl/PyKDL/*.cpp") +
         glob.glob(orocos_root + "orocos_kdl/src/*.cpp") +
         glob.glob(orocos_root + "orocos_kdl/src/utilities/*.cpp") +
         glob.glob(orocos_root + "orocos_kdl/src/utilities/*.cxx"),
         include_dirs=include_dirs,
-        extra_compile_args=['-std=c++11'],
+        extra_compile_args=extra_compile_args,
     )],
     zip_safe=False,
 )

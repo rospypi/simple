@@ -8,6 +8,7 @@ include_dirs = [
     "roscpp_core/rostime/include",
     "stubs/include",
 ]
+extra_compile_args = []
 library_dirs = []
 libraris = []
 
@@ -25,11 +26,14 @@ define_macros = [
 
 if platform.system() == "Windows":
     define_macros += [("_WINDOWS", None)]
+else:
+    extra_compile_args += ["-std=c++11"]
+
 
 setup(
     name="tf2_py",
     packages=["tf2_py"],
-    version="0.6.5.post0",
+    version="0.6.5.post1",
     package_dir={"": "geometry2/tf2_py/src"},
     install_requires=["rospy", "geometry_msgs", "tf2_msgs"],
     ext_package="tf2_py",
@@ -46,5 +50,6 @@ setup(
         include_dirs=include_dirs,
         library_dirs=library_dirs,
         define_macros=define_macros,
+        extra_compile_args=extra_compile_args,
         )],
     )

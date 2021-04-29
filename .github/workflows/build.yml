@@ -77,6 +77,7 @@ jobs:
       env:
         PYTHON_VERSION: ${{ matrix.python-version }}
       run: |
+        sudo apt-get update
         sudo apt install liblz4-dev sip-dev libeigen3-dev sip-dev libboost-all-dev
         echo BRANCH_NAME=Linux_${PYTHON_VERSION} >> $GITHUB_ENV
     - name: Install packages(MacOS)
@@ -93,10 +94,16 @@ jobs:
       run: |
         curl -LO -s "https://github.com/lz4/lz4/archive/v1.9.2.zip"
         unzip -q v1.9.2.zip -d roslz4
-        "/c/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/MSBuild/Current/Bin/MSBuild.exe" "roslz4\lz4-1.9.2\visual\VS2017\lz4.sln" //t:liblz4 //p:Configuration=Release //p:Platform="x64" //p:ForceImportBeforeCppTargets="D:\a\simple\simple\roslz4\build.props" //p:WindowsTargetPlatformVersion="10.0.18362.0"
+        "/c/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/MSBuild/Current/Bin/MSBuild.exe" "roslz4\lz4-1.9.2\visual\VS2017\liblz4\liblz4.vcxproj" //t:Build //p:Configuration=Release //p:Platform="x64" //p:ForceImportBeforeCppTargets="D:\a\simple\simple\roslz4\build.props" //p:WindowsTargetPlatformVersion="10.0.19041.0"
         curl -LO -s "https://gitlab.com/libeigen/eigen/-/archive/3.3.7/eigen-3.3.7.zip"
         unzip -q eigen-3.3.7.zip -d PyKDL
-        echo BOOST_ROOT=${BOOST_ROOT_1_72_0} >> $GITHUB_ENV
+        curl -LO -s "https://sourceforge.net/projects/boost/files/boost-binaries/1.72.0/boost_1_72_0-msvc-14.2-64.exe"
+        ./boost_1_72_0-msvc-14.2-64.exe //SILENT //SP- //SUPPRESSMSGBOXES //DIR=boost_1_72_0
+        mkdir -p boost_1_72_0/include
+        mv boost_1_72_0/boost boost_1_72_0/include
+        mv boost_1_72_0/lib64-msvc-14.2 boost_1_72_0/lib
+        ls boost_1_72_0/include
+        echo BOOST_ROOT=$(cmd //c cd)\\boost_1_72_0 >> $GITHUB_ENV
         echo EIGEN_ROOT=eigen-3.3.7 >> $GITHUB_ENV
         echo BRANCH_NAME=Windows_${PYTHON_VERSION} >> $GITHUB_ENV
       shell: bash
