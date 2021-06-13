@@ -28,5 +28,7 @@ ENV LC_ALL=C.UTF-8
 ENV LANG=C.UTF-8
 RUN rospy-build build -d any
 RUN rospy-build build -d linux --native
-RUN rospy-build index index --local any --local linux
+ENV INDEX_BUILDER_COMMIT 4fc61ecb09514fe285f43c7316c5c7f52c3ade6b
+RUN pip3 install git+git://github.com/rospypi/index_builder.git@${INDEX_BUILDER_COMMIT}
+RUN python3 -m index_builder local index/ any/ linux/
 CMD ["python3", "-u", "-m", "http.server"]

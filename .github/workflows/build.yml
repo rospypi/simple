@@ -7,6 +7,7 @@ on:
       - master
 env:
   MASTER_BRANCH: refs/heads/master
+  INDEX_BUILDER_COMMIT: 4fc61ecb09514fe285f43c7316c5c7f52c3ade6b
 jobs:
   universal-build:
     runs-on: ubuntu-18.04
@@ -158,18 +159,17 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v1
       with:
-        python-version: 3.6
-    - name: Install rospy-build
+        python-version: 3.8
+    - name: Prepare build env
       run: |
-        python -m pip install --upgrade pip
-        pip install -U setuptools==51.2.0 wheel
-        ./rospy-builder/install.sh
-        pip install rospy-builder/
-    - name: Generate index html
+          python3 -m pip install --upgrade pip
+          pip3 install git+git://github.com/rospypi/index_builder.git@${{ env.INDEX_BUILDER_COMMIT }}
+    - name: Build index html
       run: |
-        mkdir index
-        rospy-build index index
-        rospy-build index --prefix pre index/_pre
+          git clone https://github.com/rospypi/simple.git simple
+          mkdir index
+          python3 -m index_builder repo --path simple index
+          python3 -m index_builder repo --prefix pre --path simple index/_pre
     - name: Runs only when tagged or pushed to master
       if: startsWith(github.ref, 'refs/tags/') || github.ref == env.MASTER_BRANCH
       env:
