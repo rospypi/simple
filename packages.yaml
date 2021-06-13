@@ -42,7 +42,7 @@
 # ros/ros_comm
 - name: rospy
   repository: ros/ros_comm
-  version: 1.15.7
+  version: 1.15.11
   path: clients/rospy
   requires:
     - roscpp
@@ -50,19 +50,19 @@
     - std_msgs
 - name: rosgraph
   repository: ros/ros_comm
-  version: 1.15.7
+  version: 1.15.11
   path: tools/rosgraph
 - name: rosservice
   repository: ros/ros_comm
-  version: 1.15.7
+  version: 1.15.11
   path: tools/rosservice
 - name: rosmsg
   repository: ros/ros_comm
-  version: 1.15.7
+  version: 1.15.11
   path: tools/rosmsg
 - name: rosbag
   repository: ros/ros_comm
-  version: 1.15.7
+  version: 1.15.11
   path: tools/rosbag
   requires:
     - "genpy<2000"
@@ -72,22 +72,22 @@
     - rospy
 - name: rosmaster
   repository: ros/ros_comm
-  version: 1.15.7
+  version: 1.15.11
   path: tools/rosmaster
   requires:
     - defusedxml
     - rosgraph
 - name: rostest
   repository: ros/ros_comm
-  version: 1.15.7
+  version: 1.15.11
   path: tools/rostest
 - name: roslaunch
   repository: ros/ros_comm
-  version: 1.15.7
+  version: 1.15.11
   path: tools/roslaunch
 - name: message_filters
   repository: ros/ros_comm
-  version: 1.15.7
+  version: 1.15.11
   path: utilities/message_filters
 # tf
 - name: tf_conversions
@@ -133,9 +133,8 @@
 - name: roscpp
   type: msg
   repository: ros/ros_comm
-  version: 1.15.7
+  version: 1.15.11
   path: clients/roscpp
-  release_version: 1.15.7.post0  # genpy 0.6.14
 - name: std_srvs
   type: msg
   repository: ros/ros_comm_msgs
