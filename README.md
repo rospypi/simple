@@ -74,8 +74,12 @@ pip install --extra-index-url https://rospypi.github.io/simple/ -e rospy-builder
 rospy-build build -d any
 # build platform depended packages if you need
 rospy-build build -d linux --native
-# build index html files
-rospy-build index --local any --local linux index
+```
+
+To build index html files, use [rospypi/index\_builder](https://github.com/rospypi/index_builder).
+```
+pip3 install git+git://github.com/rospypi/index_builder.git
+python3 -m index_builder local index/ any/ linux/
 python -m http.server
 ```
 
