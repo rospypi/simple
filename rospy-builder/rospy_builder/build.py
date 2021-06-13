@@ -110,7 +110,6 @@ def build_package(
     requires: List[str] = [],
     unrequires: List[str] = [],
     compare: bool = True,
-    release: bool = False,
 ) -> None:
     setup_code = (package_dir / "setup.py").read_text()
 
@@ -196,9 +195,8 @@ def build_package(
                     else:
                         print(f"content is not changed: {tar_file.name}")
                 return
-            if release:
-                print("copy")
-                shutil.copy(tar_file, dest_package_dir)
+            print("copy")
+            shutil.copy(tar_file, dest_package_dir)
         if (not only_binary and native_build is None) or (
             only_binary and native_build is not None
         ):
@@ -222,9 +220,8 @@ def build_package(
             if native_build == "all":
                 # TODO: find a better way
                 subprocess.call(["python2", "setup.py", "bdist_wheel"])
-            if release:
-                for wheel in (package_dir / "dist").glob("*.whl"):
-                    shutil.copy(wheel, dest_package_dir)
+            for wheel in (package_dir / "dist").glob("*.whl"):
+                shutil.copy(wheel, dest_package_dir)
     finally:
         sys.argv = original_argv
         os.chdir(cwd)
@@ -349,7 +346,6 @@ def build_package_from_github_package(
     requires: List[str] = [],
     unrequires: List[str] = [],
     compare: bool = True,
-    release: bool = False,
 ) -> None:
     if sub_dir:
         package = sub_dir.name
@@ -376,7 +372,6 @@ def build_package_from_github_package(
         requires=requires,
         unrequires=unrequires,
         compare=compare,
-        release=release,
     )
 
 
@@ -390,7 +385,6 @@ def build_package_from_github_msg(
     requires: List[str] = [],
     unrequires: List[str] = [],
     compare: bool = True,
-    release: bool = False,
 ) -> None:
     if sub_dir:
         package = sub_dir.name
@@ -418,7 +412,6 @@ def build_package_from_github_msg(
         requires=requires,
         unrequires=unrequires,
         compare=compare,
-        release=release,
     )
 
 
@@ -472,7 +465,6 @@ class PackageInfo:
     requires: Optional[List[str]] = field(default_factory=list)
     unrequires: Optional[List[str]] = field(default_factory=list)
     skip_compare: Optional[bool] = False
-    release: Optional[bool] = False
 
 
 @click.group(invoke_without_command=True)
@@ -565,7 +557,6 @@ def build(
                         requires=package.requires,
                         unrequires=package.unrequires,
                         compare=not package.skip_compare,
-                        release=package.release,
                     )
                 else:
                     build_package_from_github_msg(
@@ -578,7 +569,6 @@ def build(
                         requires=package.requires,
                         unrequires=package.unrequires,
                         compare=not package.skip_compare,
-                        release=package.release,
                     )
     finally:
         shutil.rmtree(tmp)
