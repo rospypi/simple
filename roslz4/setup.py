@@ -15,7 +15,7 @@ define_macros = [
 if platform.system() == "Windows":
     # these are special value for Github Action build
     include_dirs += ["lz4-1.9.2/lib"]
-    libraries = ["lz4-1.9.2/visual/VS2017/bin/x64_Release/liblz4_static"]
+    libraries = ["lz4-1.9.2/visual/VS2017/liblz4/bin/x64_Release/liblz4_static"]
 else:
     extra_compile_args += [
         "-Wno-strict-prototypes",
@@ -23,12 +23,14 @@ else:
         "-Wno-unused-variable",
         "-Wno-strict-aliasing",
     ]
+    if platform.system() == "Darwin":
+        extra_compile_args += [""]
 
 
 setup(
     name="roslz4",
     packages=["roslz4"],
-    version="1.14.3.post1",
+    version="1.14.3.post2",
     package_dir={"": "ros_comm/utilities/roslz4/src"},
     install_requires=[],
     ext_package="roslz4",
