@@ -14,6 +14,8 @@ Support platforms: Linux, Windows, MacOSX
 
 (Not all packages are tested.)
 
+**Note**: If you're using Conda environment, be sure to take a look at [RoboStack](https://github.com/RoboStack/ros-noetic), which provides more ROS pre-built packages including non-Python packages and tools such as Rviz.
+
 ## Install
 
 ```bash
