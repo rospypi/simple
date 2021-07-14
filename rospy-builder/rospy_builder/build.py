@@ -289,6 +289,8 @@ def generate_package_from_rosmsg(
     search_dir = {package: [package_dir / "msg"]}
     if search_root_dir is not None:
         for msg_dir in search_root_dir.glob("**/msg"):
+            if "test" in str(msg_dir):
+                continue
             p = msg_dir.parent.name
             if p not in search_dir:
                 search_dir[p] = []
