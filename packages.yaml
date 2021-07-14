@@ -193,13 +193,13 @@
   type: msg
   repository: ros/common_msgs
   version: 1.13.0
-  release_version: 1.13.0.post2  # genpy 0.6.14
+  release_version: 1.13.0.post3  # genpy 0.6.14+
   path: trajectory_msgs
 - name: visualization_msgs
   type: msg
   repository: ros/common_msgs
   version: 1.13.0
-  release_version: 1.13.0.post2  # genpy 0.6.14
+  release_version: 1.13.0.post3  # genpy 0.6.14+
   path: visualization_msgs
 - name: tf
   repository: ros/geometry
@@ -226,7 +226,7 @@
   type: msg
   repository: ros-controls/control_msgs
   version: 1.5.2
-  release_version: 1.5.2.post2  # genpy 0.6.14
+  release_version: 1.5.2.post3  # genpy 0.6.14+
   path: control_msgs
 - name: map_msgs
   type: msg
@@ -244,5 +244,5 @@
   type: msg
   repository: ros-simulation/gazebo_ros_pkgs
   version: 2.5.20
-  release_version: 2.5.20.post2  # genpy 0.6.14
+  release_version: 2.5.20.post3  # genpy 0.6.14+
   path: gazebo_msgs
