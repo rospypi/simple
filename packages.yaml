@@ -77,10 +77,23 @@
   requires:
     - defusedxml
     - rosgraph
+- name: rosnode
+  repository: ros/ros_comm
+  version: 1.15.11
+  path: tools/rosnode
+  requires:
+    - rosgraph
+    - rostopic
 - name: rostest
   repository: ros/ros_comm
   version: 1.15.11
   path: tools/rostest
+- name: rostopic
+  repository: ros/ros_comm
+  version: 1.15.11
+  path: tools/rostopic
+  requires:
+    - rospy
 - name: roslaunch
   repository: ros/ros_comm
   version: 1.15.11
