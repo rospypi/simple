@@ -169,7 +169,7 @@
 - name: sensor_msgs
   repository: ros/common_msgs
   version: 1.13.0
-  release_version: 1.13.0.post2  # genpy 0.6.14
+  release_version: 1.13.0.post3  # genpy 0.6.14
   path: sensor_msgs
   src: src
 - name: actionlib_msgs
