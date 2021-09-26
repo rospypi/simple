@@ -129,6 +129,10 @@
 - name: catkin
   repository: ros/catkin
   version: 0.7.18
+- name: dynamic_reconfigure
+  repository: ros/dynamic_reconfigure
+  version: 1.6.0
+  src: src
 # others
 - name: image_geometry
   repository: ros-perception/vision_opencv
