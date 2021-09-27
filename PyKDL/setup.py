@@ -26,7 +26,7 @@ if platform.system() != "Windows":
 setup(
     name="PyKDL",
     packages=["PyKDL"],
-    version="1.5",
+    version="1.5.1",
     ext_package="PyKDL",
     ext_modules=[Extension(
         "PyKDL",
