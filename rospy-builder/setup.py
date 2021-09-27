@@ -3,7 +3,7 @@ from setuptools import setup
 
 setup(
     name="rospy-builder",
-    version="0.5.3",
+    version="0.5.4",
     description="rospy package build tool",
     author="Tamamki Nishino",
     author_email="otamachan@gmail.com",

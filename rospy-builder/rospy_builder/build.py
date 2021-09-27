@@ -286,6 +286,12 @@ def generate_package_from_rosmsg(
     import genpy.generator
     import genpy.genpy_main
 
+    # NOTE: genpy uses a global variable to manage variable names
+    # As such, the variable names may change frequently depending on the
+    # order in which `genpy.generate_messages` is called.
+    # In order to avoid unnecessary changes, call `reset_var` every time.
+    genpy.generator.reset_var()
+
     search_dir = {package: [package_dir / "msg"]}
     if search_root_dir is not None:
         for msg_dir in search_root_dir.glob("**/msg"):
@@ -303,6 +309,9 @@ def generate_package_from_rosmsg(
     for gentype in ("msg", "srv"):
         files = (package_dir / gentype).glob(f"*.{gentype}")
         if files:
+            # NOTE: files needs to be in alphabetical order in order to make
+            # the generated files consistent
+            files = list(sorted(files))
             if gentype == "msg":
                 generator = genpy.generator.MsgGenerator()
             elif gentype == "srv":
