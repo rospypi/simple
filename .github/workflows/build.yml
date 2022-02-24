@@ -70,7 +70,7 @@ jobs:
         include:
           - platform: macos-10.15
             python-version: 3.6
-          - platform: windows-2016
+          - platform: windows-2019
             python-version: 3.6
 
     steps:
