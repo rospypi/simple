@@ -62,6 +62,16 @@ jobs:
       matrix:
         platform: [ubuntu-18.04, macos-latest, windows-latest]
         python-version: [3.6, 3.7, 3.8]
+        exclude:
+          - platform: macos-latest
+            python-version: 3.6
+          - platform: windows-latest
+            python-version: 3.6
+        include:
+          - platform: macos-10.15
+            python-version: 3.6
+          - platform: windows-2019
+            python-version: 3.6
 
     steps:
     - name: Git config
@@ -89,6 +99,9 @@ jobs:
       run: |
         brew install eigen boost
         echo BRANCH_NAME=Darwin_${PYTHON_VERSION} >> $GITHUB_ENV
+    - name: Add msbuild to PATH(Windows)
+      if: startsWith(matrix.platform, 'windows-')
+      uses: microsoft/setup-msbuild@v1.1
     - name: Install packages(Windows)
       if: startsWith(matrix.platform, 'windows-')
       env:
@@ -96,7 +109,7 @@ jobs:
       run: |
         curl -LO -s "https://github.com/lz4/lz4/archive/v1.9.2.zip"
         unzip -q v1.9.2.zip -d roslz4
-        "/c/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/MSBuild/Current/Bin/MSBuild.exe" "roslz4\lz4-1.9.2\visual\VS2017\liblz4\liblz4.vcxproj" //t:Build //p:Configuration=Release //p:Platform="x64" //p:ForceImportBeforeCppTargets="D:\a\simple\simple\roslz4\build.props" //p:WindowsTargetPlatformVersion="10.0.19041.0"
+        msbuild.exe "roslz4\lz4-1.9.2\visual\VS2017\liblz4\liblz4.vcxproj" //t:Build //p:Configuration=Release //p:Platform="x64" //p:ForceImportBeforeCppTargets="D:\a\simple\simple\roslz4\build.props" //p:WindowsTargetPlatformVersion="10.0.19041.0"
         curl -LO -s "https://gitlab.com/libeigen/eigen/-/archive/3.3.7/eigen-3.3.7.zip"
         unzip -q eigen-3.3.7.zip -d PyKDL
         curl -LO -s "https://sourceforge.net/projects/boost/files/boost-binaries/1.72.0/boost_1_72_0-msvc-14.2-64.exe"
