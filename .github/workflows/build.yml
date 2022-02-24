@@ -65,8 +65,12 @@ jobs:
         exclude:
           - platform: macos-latest
             python-version: 3.6
+          - platform: windows-latest
+            python-version: 3.6
         include:
           - platform: macos-10.15
+            python-version: 3.6
+          - platform: windows-2016
             python-version: 3.6
 
     steps:
