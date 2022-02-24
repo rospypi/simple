@@ -98,6 +98,10 @@
   repository: ros/ros_comm
   version: 1.15.11
   path: tools/roslaunch
+- name: rosparam
+  repository: ros/ros_comm
+  version: 1.15.11
+  path: tools/rosparam
 - name: message_filters
   repository: ros/ros_comm
   version: 1.15.11
