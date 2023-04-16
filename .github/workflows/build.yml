@@ -12,11 +12,11 @@ jobs:
   universal-build:
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: recursive
     - name: Set up Python
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v3
       with:
         python-version: 3.6
     - name: Install rospy-build
@@ -77,11 +77,11 @@ jobs:
     - name: Git config
       run: git config --global core.symlinks true
       if: startsWith(matrix.platform, 'windows-')
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: recursive
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install packages(Ubuntu)
@@ -166,11 +166,11 @@ jobs:
     needs: native-build
     runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: recursive
     - name: Set up Python
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v3
       with:
         python-version: 3.8
     - name: Prepare build env
