@@ -176,7 +176,7 @@ jobs:
     - name: Prepare build env
       run: |
           python3 -m pip install --upgrade pip
-          pip3 install git+git://github.com/rospypi/index_builder.git@${{ env.INDEX_BUILDER_COMMIT }}
+          pip3 install git+https://github.com/rospypi/index_builder.git@${{ env.INDEX_BUILDER_COMMIT }}
     - name: Build index html
       run: |
           git clone https://github.com/rospypi/simple.git simple
