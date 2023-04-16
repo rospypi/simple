@@ -10,13 +10,13 @@ env:
   INDEX_BUILDER_COMMIT: 4fc61ecb09514fe285f43c7316c5c7f52c3ade6b
 jobs:
   universal-build:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: recursive
     - name: Set up Python
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v3
       with:
         python-version: 3.6
     - name: Install rospy-build
@@ -60,7 +60,7 @@ jobs:
     runs-on: ${{ matrix.platform }}
     strategy:
       matrix:
-        platform: [ubuntu-18.04, macos-latest, windows-latest]
+        platform: [ubuntu-20.04, macos-latest, windows-latest]
         python-version: [3.6, 3.7, 3.8]
         exclude:
           - platform: macos-latest
@@ -77,11 +77,11 @@ jobs:
     - name: Git config
       run: git config --global core.symlinks true
       if: startsWith(matrix.platform, 'windows-')
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: recursive
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install packages(Ubuntu)
@@ -164,19 +164,19 @@ jobs:
 
   update-pages:
     needs: native-build
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: recursive
     - name: Set up Python
-      uses: actions/setup-python@v1
+      uses: actions/setup-python@v3
       with:
         python-version: 3.8
     - name: Prepare build env
       run: |
           python3 -m pip install --upgrade pip
-          pip3 install git+git://github.com/rospypi/index_builder.git@${{ env.INDEX_BUILDER_COMMIT }}
+          pip3 install git+https://github.com/rospypi/index_builder.git@${{ env.INDEX_BUILDER_COMMIT }}
     - name: Build index html
       run: |
           git clone https://github.com/rospypi/simple.git simple
